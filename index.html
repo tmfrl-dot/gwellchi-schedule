@@ -11,19 +11,22 @@
 :root{
   --paper:#F5F6F3;--surface:#FFFFFF;--ink:#1E2940;--muted:#6B7280;--line:#E2E5E9;
   --red:#C8333A;--gold:#C9A45C;--hl:#F4EA6A;--hl-ink:#1E2940;
-  --p-blue:#2B4C9B;--p-red:#C8333A;--p-green:#2E7D5B;--p-ink:#2F3440;--p-purple:#7A4BA8;--p-orange:#C9701A;--p-teal:#1D8585;--p-pink:#C2477F;--p-brown:#8A5A3B;--p-mustard:#9A7F0C;--p-sky:#2F86C9;
+  --s-yellow:#FFE27A;--s-lime:#CCF08C;--s-blue:#A9CBFF;--s-purple:#D6BAFF;--s-pink:#FFB9D8;--s-sky:#A9E7FF;--s-mint:#A6F0D6;--s-peach:#FFD3AC;--s-lavender:#C7C9FF;--s-coral:#FFB6B6;
+  --p-pink:#FF3D8F;--p-yellow:#E3A400;--p-sky:#0EA5E9;--p-mint:#00B383;--p-purple:#9B4DFF;--p-orange:#FF7A00;--p-lime:#6FBF1E;--p-coral:#FF4D4D;--p-teal:#00B7CE;--p-blue:#3457FF;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --paper:#14171C;--surface:#1C2027;--ink:#E7E9EE;--muted:#9AA1AC;--line:#2C323B;
   --hl:#8C8431;--hl-ink:#FFFDE8;
-  --p-blue:#7C9BE6;--p-red:#EE7178;--p-green:#5CC096;--p-ink:#D5D8DE;--p-purple:#B592DE;--p-orange:#F0A45A;--p-teal:#5CC7C7;--p-pink:#EC8AB6;--p-brown:#C99A78;--p-mustard:#D9C050;--p-sky:#7CC0F0;
+  --s-yellow:#7D6820;--s-lime:#5F7D33;--s-blue:#3E5A8C;--s-purple:#5D4A8F;--s-pink:#8B4E6D;--s-sky:#2F6478;--s-mint:#2C7361;--s-peach:#8A6142;--s-lavender:#555A96;--s-coral:#8D5050;
+  --p-pink:#FF7FB8;--p-yellow:#FFD24D;--p-sky:#6FC9F5;--p-mint:#3FD9AC;--p-purple:#C398FF;--p-orange:#FFA857;--p-lime:#A5DD5C;--p-coral:#FF8A8A;--p-teal:#4DD8EA;--p-blue:#8199FF;
 }}
 :root[data-theme="dark"]{
   --paper:#14171C;--surface:#1C2027;--ink:#E7E9EE;--muted:#9AA1AC;--line:#2C323B;
   --hl:#8C8431;--hl-ink:#FFFDE8;
-  --p-blue:#7C9BE6;--p-red:#EE7178;--p-green:#5CC096;--p-ink:#D5D8DE;--p-purple:#B592DE;--p-orange:#F0A45A;--p-teal:#5CC7C7;--p-pink:#EC8AB6;--p-brown:#C99A78;--p-mustard:#D9C050;--p-sky:#7CC0F0;
+  --s-yellow:#7D6820;--s-lime:#5F7D33;--s-blue:#3E5A8C;--s-purple:#5D4A8F;--s-pink:#8B4E6D;--s-sky:#2F6478;--s-mint:#2C7361;--s-peach:#8A6142;--s-lavender:#555A96;--s-coral:#8D5050;
+  --p-pink:#FF7FB8;--p-yellow:#FFD24D;--p-sky:#6FC9F5;--p-mint:#3FD9AC;--p-purple:#C398FF;--p-orange:#FFA857;--p-lime:#A5DD5C;--p-coral:#FF8A8A;--p-teal:#4DD8EA;--p-blue:#8199FF;
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:border-box}
@@ -63,6 +66,7 @@ nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)
 
 /* student calendar session marks */
 .cell.has{border-color:transparent;box-shadow:inset 0 0 0 2px var(--gold)}
+.cell.has{background:color-mix(in srgb,var(--gold) 7%,var(--surface))}
 .mark{font-size:10.5px;line-height:1.25;color:var(--red);font-weight:500;margin-top:2px}
 .mark .n{font-weight:700}
 .more{font-size:10px;color:var(--muted)}
@@ -80,8 +84,12 @@ nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)
 .lanes{flex:1;overflow-x:auto;position:relative}
 .lanes-in{position:relative}
 .hr{position:absolute;left:0;right:0;border-top:1px dashed var(--line)}
-.bar{position:absolute;border:0;border-left:3px solid var(--c);background:color-mix(in srgb,var(--c) 13%,transparent);
+.bar{position:absolute;border:0;border-left:3px solid var(--c);background:color-mix(in srgb,var(--c) 20%,transparent);
   border-radius:0 6px 6px 0;padding:4px 5px;text-align:left;overflow:hidden;color:var(--ink)}
+.bar.stu{background:var(--c);border-left-color:color-mix(in srgb,var(--c) 70%,var(--ink))}
+.bar.stu .nm{color:var(--ink)}
+.person.s{flex-wrap:wrap}
+.person.s .swatches{order:5;width:100%;flex-wrap:wrap;margin-top:4px}
 .bar .nm{display:block;font-weight:600;font-size:12.5px;color:var(--c);line-height:1.2;word-break:keep-all}
 .bar .tm{display:block;font-size:10.5px;color:var(--muted);line-height:1.3}
 .emptybox{padding:28px 16px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:12px}
@@ -97,6 +105,7 @@ nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)
 .chips{display:flex;gap:6px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
 .chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:14px;display:flex;align-items:center;gap:6px}
 .chip .dot{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.chip[aria-pressed="true"]{background:color-mix(in srgb,var(--c) 14%,var(--surface))}
 .chip[aria-pressed="true"]{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c);font-weight:600}
 .hint{color:var(--muted);font-size:13px;margin:10px 2px 0}
 .summary{margin-top:12px;font-size:14px;color:var(--muted)}
@@ -203,8 +212,11 @@ header .sub.bad{color:var(--red);font-weight:600}
 <script>
 /* ===== 저장소 (지금은 이 기기에 저장 · 다음 단계에서 구글 시트로 교체) ===== */
 const KEY='academy-schedule-v1';
-const PENS=['blue','red','green','ink','purple','orange','teal','pink','brown','mustard'];
-const PEN_KO={blue:'파랑',red:'빨강',green:'초록',ink:'검정',purple:'보라',orange:'주황',teal:'청록',pink:'분홍',brown:'갈색',mustard:'겨자'};
+const PENS=['pink','yellow','sky','mint','purple','orange','lime','coral','teal','blue'];
+const SPENS=['yellow','lime','blue','purple','pink','sky','mint','peach','lavender','coral'];
+const SPEN_KO={yellow:'노랑',lime:'연두',blue:'파랑',purple:'보라',pink:'핑크',sky:'하늘',mint:'민트',peach:'살구',lavender:'라벤더',coral:'코랄'};
+const OLD_PEN={red:'coral',green:'mint',ink:'sky',brown:'coral',mustard:'yellow'};
+const PEN_KO={pink:'핑크',yellow:'노랑',sky:'하늘',mint:'민트',purple:'보라',orange:'주황',lime:'라임',coral:'코랄',teal:'청록',blue:'파랑'};
 const CIRC='①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
 const DOW='일월화수목금토';
 const pad=n=>String(n).padStart(2,'0');
@@ -212,7 +224,7 @@ const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const uid=()=>Math.random().toString(36).slice(2,10);
 const toMin=t=>{const[h,m]=t.split(':').map(Number);return h*60+m};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const penVar=c=>PENS.includes(c)?`var(--p-${c})`:'var(--muted)';
+const penVar=c=>{const k=PENS.includes(c)?c:OLD_PEN[c];return k?`var(--p-${k})`:'var(--muted)'};
 const hasLog=x=>!!(x.log&&(x.log.content||x.log.homework));
 const isAbs=x=>x.status==='absent';
 const keep=x=>hasLog(x)||isAbs(x)||!x.fromPlan;
@@ -221,9 +233,9 @@ const hrs=x=>{const h=(toMin(x.end)-toMin(x.start))/60;return Number.isInteger(h
 
 function seed(){
   const now=new Date(),y=now.getFullYear(),m=now.getMonth(),ym=`${y}-${pad(m+1)}`;
-  const teachers=[{id:uid(),name:'원장님',color:'red'},{id:uid(),name:'김 선생님',color:'blue'},{id:uid(),name:'이 선생님',color:'green'}];
+  const teachers=[{id:uid(),name:'원장님',color:'pink'},{id:uid(),name:'김 선생님',color:'sky'},{id:uid(),name:'이 선생님',color:'lime'}];
   const names=[['민서',0,'HSK 4급 목표'],['지호',1,''],['하윤',2,''],['도윤',1,''],['서아',0,'']];
-  const students=names.map(([name,t,goal])=>({id:uid(),name,tid:teachers[t].id,goal}));
+  const students=names.map(([name,t,goal],i)=>({id:uid(),name,tid:teachers[t].id,goal,color:SPENS[i]}));
   const pl=[[0,2,'19:00','21:00'],[1,1,'16:00','18:00'],[2,3,'17:00','19:00'],[3,2,'15:00','17:30'],[4,5,'18:00','20:00'],[1,4,'19:00','21:00']];
   const plans={};
   pl.forEach(([si,dow,start,end])=>{const s=students[si];(plans[s.id]??={})[ym]??=[];plans[s.id][ym].push({dow,start,end,tid:s.tid})});
@@ -317,7 +329,11 @@ const student=id=>S.students.find(s=>s.id===id);
 const teacher=id=>S.teachers.find(t=>t.id===id);
 const sessTeacher=x=>teacher(x.tid)||teacher(student(x.sid)?.tid);
 const colorOfSess=x=>penVar(sessTeacher(x)?.color);
-const colorOfStu=s=>penVar(teacher(s?.tid)?.color);
+const sVar=c=>SPENS.includes(c)?`var(--s-${c})`:null;
+const stuColor=s=>{if(!s)return 'var(--muted)';const v=sVar(s.color);if(v)return v;const i=Math.max(0,S.students.findIndex(x=>x.id===s.id));return `var(--s-${SPENS[i%SPENS.length]})`};
+const colorOfStu=s=>stuColor(s);
+let colorMode='teacher';
+const colorOf=x=>colorMode==='student'?stuColor(student(x.sid)):colorOfSess(x);
 const curYM=()=>`${month.getFullYear()}-${pad(month.getMonth()+1)}`;
 const sessionsOn=date=>S.sessions.filter(x=>x.date===date&&student(x.sid)).sort((a,b)=>toMin(a.start)-toMin(b.start));
 const tOptions=sel=>`<option value="">미지정</option>`+S.teachers.map(t=>`<option value="${t.id}" ${t.id===sel?'selected':''}>${esc(t.name)}</option>`).join('');
@@ -350,9 +366,12 @@ function renderDay(){
       <span class="d">${d}</span>${n?`<span class="cnt"><b>${n}</b>명</span>`:''}</button>`});
   const all=sessionsOn(selDate).filter(byT),list=all.filter(x=>!isAbs(x)),absL=all.filter(isAbs);
   const [y,m,d]=selDate.split('-').map(Number);
-  const legend=S.teachers.length?`<div class="legend"><button class="chip" data-tf="" aria-pressed="${!tFilter}" style="--c:var(--ink)">전체</button>${S.teachers.map(t=>`<button class="chip" data-tf="${t.id}" aria-pressed="${tFilter===t.id}" style="--c:${penVar(t.color)}"><span class="dot"></span>${esc(t.name)}</button>`).join('')}</div>`:'';
+  const modeSeg=`<div class="seg" style="margin:0 0 10px"><button data-cmode="teacher" aria-pressed="${colorMode==='teacher'}">선생님 색</button><button data-cmode="student" aria-pressed="${colorMode==='student'}">원생 색</button></div>`;
+  const legend=colorMode==='student'
+    ? (()=>{const ids=[...new Set(all.map(x=>x.sid))];return ids.length?`<div class="legend">${ids.map(id=>{const st=student(id);return `<span class="chip" style="--c:${stuColor(st)};background:var(--c)">${esc(st.name)}</span>`}).join('')}</div>`:''})()
+    : S.teachers.length?`<div class="legend"><button class="chip" data-tf="" aria-pressed="${!tFilter}" style="--c:var(--ink)">전체</button>${S.teachers.map(t=>`<button class="chip" data-tf="${t.id}" aria-pressed="${tFilter===t.id}" style="--c:${penVar(t.color)}"><span class="dot"></span>${esc(t.name)}</button>`).join('')}</div>`:'';
   let body;
-  const rowH=x=>{const st=student(x.sid),t=sessTeacher(x);return `<button class="row ${isAbs(x)?'abs':''}" data-sess="${x.id}" style="--c:${colorOfSess(x)}">
+  const rowH=x=>{const st=student(x.sid),t=sessTeacher(x);return `<button class="row ${isAbs(x)?'abs':''}" data-sess="${x.id}" style="--c:${colorOf(x)}">
         <span class="dot"></span><span class="t">${x.start}–${x.end}</span><span class="n">${esc(st.name)}${x.makeupOf?'<span class="badge" style="color:var(--c)">보강</span>':''} ${t?`<span class="tag">${esc(t.name)}</span>`:''}</span>
         <span class="m">${isAbs(x)?(x.makeupId?'빠짐 · 보강 잡힘':'빠짐 · 보강 필요'):hasLog(x)?'일지 ✓':'일지 쓰기'}</span></button>`};
   if(!list.length){
@@ -365,7 +384,7 @@ function renderDay(){
     let axis='',hr='';
     for(let h=sH;h<=eH;h++){const top=(h-sH)*H;axis+=`<div style="top:${top+8}px">${h}:00</div>`;hr+=`<div class="hr" style="top:${top+8}px"></div>`}
     const bars=list.map(x=>{const st=student(x.sid);const top=(toMin(x.start)-sH*60)/60*H+8,hh=Math.max(24,(toMin(x.end)-toMin(x.start))/60*H);
-      return `<button class="bar" data-sess="${x.id}" style="--c:${colorOfSess(x)};top:${top}px;height:${hh-2}px;left:${x._lane*LW+4}px;width:${LW-8}px">
+      return `<button class="bar ${colorMode==='student'?'stu':''}" data-sess="${x.id}" style="--c:${colorOf(x)};top:${top}px;height:${hh-2}px;left:${x._lane*LW+4}px;width:${LW-8}px">
         <span class="nm">${esc(st.name)}${x.makeupOf?'<span class="badge">보</span>':''}${hasLog(x)?'<span class="check-ic">✓</span>':''}</span><span class="tm">${x.start}–${x.end}</span></button>`}).join('');
     const w=`max(100%, ${lanes.length*LW+8}px)`;
     body=`<div class="tl"><div class="axis" style="height:${total+16}px">${axis}</div>
@@ -373,7 +392,7 @@ function renderDay(){
       <div class="list">${[...list,...absL].map(rowH).join('')}</div>`;
   }
   return monthBar()+grid+`<div class="dayhead"><h3><span>${m}/${d}(${DOW[new Date(y,m-1,d).getDay()]})</span> ${list.length}명</h3>
-    <button class="btn" data-act="add-day">수업 추가</button></div>`+legend+body;
+    <button class="btn" data-act="add-day">수업 추가</button></div>`+modeSeg+legend+body;
 }
 
 /* ===== 원생별 ===== */
@@ -422,9 +441,10 @@ function renderPeople(){
   const tRows=S.teachers.map(t=>`<div class="person t"><span class="dot" style="--c:${penVar(t.color)}"></span><span class="n">${esc(t.name)}</span>
       <button class="linkbtn" data-trename="${t.id}">이름</button><button class="linkbtn" data-tdel="${t.id}">삭제</button>
       <div class="swatches">${PENS.map(p=>`<button class="sw" data-tcolor="${p}" data-for="${t.id}" aria-label="${PEN_KO[p]}" aria-pressed="${t.color===p}" style="--c:${penVar(p)}"></button>`).join('')}</div></div>`).join('')||'<div class="emptybox">등록된 선생님이 없습니다.</div>';
-  const sRows=S.students.map(s=>`<div class="person"><span class="dot" style="--c:${colorOfStu(s)}"></span><span class="n">${esc(s.name)}</span>
+  const sRows=S.students.map(s=>`<div class="person s"><span class="dot" style="--c:${stuColor(s)};box-shadow:inset 0 0 0 1px var(--line)"></span><span class="n">${esc(s.name)}</span>
       <select data-stuteacher="${s.id}" aria-label="${esc(s.name)} 담당 선생님">${tOptions(s.tid)}</select>
-      <button class="linkbtn" data-rename="${s.id}">이름</button><button class="linkbtn" data-del-stu="${s.id}">삭제</button></div>`).join('')||'<div class="emptybox">등록된 원생이 없습니다.</div>';
+      <button class="linkbtn" data-rename="${s.id}">이름</button><button class="linkbtn" data-del-stu="${s.id}">삭제</button>
+      <div class="swatches">${SPENS.map(c=>`<button class="sw" data-scolor="${c}" data-for="${s.id}" aria-label="${SPEN_KO[c]}" aria-pressed="${s.color===c}" style="--c:var(--s-${c})"></button>`).join('')}</div></div>`).join('')||'<div class="emptybox">등록된 원생이 없습니다.</div>';
   return `<h3 class="sec">선생님</h3>
     <div class="addline"><input type="text" id="newTeacher" placeholder="선생님 이름" maxlength="20" aria-label="선생님 이름">
     <button class="btn" data-act="add-teacher">등록</button></div>${tRows}
@@ -432,7 +452,7 @@ function renderPeople(){
     <div class="addline"><input type="text" id="newName" placeholder="원생 이름" maxlength="20" aria-label="원생 이름">
     <select id="newStuT" aria-label="담당 선생님" style="width:auto">${tOptions(S.teachers[0]?.id)}</select>
     <button class="btn" data-act="add-stu">등록</button></div>${sRows}
-    <p class="hint">원생 색깔은 담당 선생님 색을 따라갑니다. 담당을 바꾸면 앞으로 넣는 수업부터 새 선생님으로 들어갑니다.</p>
+    <p class="hint">원생 색은 나이대나 반을 구분하는 용도로 직접 고르시면 됩니다. 하루 보기에서 ‘원생 색’을 누르면 이 색으로 보입니다. 담당 선생님을 바꾸면 이미 잡힌 수업까지 바꿀지 물어봅니다.</p>
     ${S.sample?`<p class="hint">지금 보이는 선생님·원생·수업은 샘플입니다. <button class="linkbtn" data-act="clear">샘플 지우고 시작하기</button></p>`:''}
     <h3 class="sec">구글 시트 연결</h3>${cloud()?`
       <p class="summary">${subText()}</p>
@@ -559,12 +579,34 @@ function render(){
   $('#main').innerHTML=view==='day'?renderDay():view==='student'?renderStudent():renderPeople();
   setSync(sync);
 }
+let scopeTarget=null;
 document.addEventListener('change',e=>{
   const el=e.target;
   if(el.dataset.pi!==undefined){planRows[el.dataset.pi][el.dataset.pk]=el.dataset.pk==='tid'?(el.value||null):el.value;return}
   const id=el.dataset.stuteacher;if(!id)return;
-  student(id).tid=el.value||null;S.sample=false;Store.save();render();toast('담당 선생님을 바꿨습니다');
+  const st=student(id),newT=el.value||null;st.tid=newT;S.sample=false;Store.save();
+  if(S.sessions.some(x=>x.sid===id))askTeacherScope(st,newT);else{render();toast('담당 선생님을 바꿨습니다')}
 });
+function askTeacherScope(st,newT){
+  const name=teacher(newT)?.name||'미지정';
+  scopeTarget={st,newT};
+  showSheet(`<h4 id="sheetTitle">${esc(st.name)} 담당을 ${esc(name)}(으)로 변경</h4>
+    <p class="note">이미 잡혀 있는 수업은 어떻게 할까요?</p>
+    <div class="field"><button class="btn ghost" data-tscope="future" style="width:100%">오늘 이후 수업 모두 바꾸기</button></div>
+    <div class="field"><button class="btn ghost" data-tscope="all" style="width:100%">지난 수업까지 전부 바꾸기</button></div>
+    <div class="field"><button class="btn" data-tscope="none" style="width:100%">앞으로 넣는 수업만 (지금 일정 그대로)</button></div>
+    <p class="note">‘지난 수업까지’를 고르면 이미 쓴 수업일지의 선생님 이름도 함께 바뀝니다.</p>`);
+}
+function applyTeacherScope(kind){
+  const t0=scopeTarget;if(!t0)return closeSheet();
+  if(kind!=='none'){
+    const from=ymd(today),ym=from.slice(0,7);
+    S.sessions.forEach(x=>{if(x.sid===t0.st.id&&(kind==='all'||x.date>=from))x.tid=t0.newT});
+    Object.entries(S.plans[t0.st.id]||{}).forEach(([k,rows])=>{if(kind==='all'||k>=ym)rows.forEach(r=>r.tid=t0.newT)});
+  }
+  Store.save();scopeTarget=null;closeSheet();render();
+  toast(kind==='none'?'앞으로 넣는 수업부터 적용됩니다':'담당 선생님을 바꿨습니다');
+}
 document.addEventListener('click',e=>{
   const row=e.target.closest('tr[data-sess]');
   if(row){openSheet({sess:S.sessions.find(x=>x.id===row.dataset.sess)});return}
@@ -608,7 +650,11 @@ document.addEventListener('click',e=>{
     const used=S.teachers.map(x=>x.color);const color=PENS.find(p=>!used.includes(p))||PENS[S.teachers.length%PENS.length];
     S.teachers.push({id:uid(),name:n,color});S.sample=false;Store.save();render();toast(`${n} 등록했습니다`);return}
   if(a==='add-stu'){const n=$('#newName').value.trim();if(!n)return;
-    const s={id:uid(),name:n,tid:$('#newStuT').value||null,goal:''};S.students.push(s);selStudent=s.id;S.sample=false;Store.save();render();toast(`${n} 등록했습니다`);return}
+    const usedC=S.students.map(x=>x.color);const sc=SPENS.find(c=>!usedC.includes(c))||SPENS[S.students.length%SPENS.length];
+    const s={id:uid(),name:n,tid:$('#newStuT').value||null,goal:'',color:sc};S.students.push(s);selStudent=s.id;S.sample=false;Store.save();render();toast(`${n} 등록했습니다`);return}
+  if(t.dataset.tscope){applyTeacherScope(t.dataset.tscope);return}
+  if(t.dataset.cmode){colorMode=t.dataset.cmode;render();return}
+  if(t.dataset.scolor){student(t.dataset.for).color=t.dataset.scolor;S.sample=false;Store.save();render();return}
   if(t.dataset.tcolor){teacher(t.dataset.for).color=t.dataset.tcolor;Store.save();render();return}
   if(t.dataset.trename){const x=teacher(t.dataset.trename);const n=prompt('새 이름',x.name);if(n&&n.trim()){x.name=n.trim();Store.save();render()}return}
   if(t.dataset.tdel){const x=teacher(t.dataset.tdel);if(!confirm(`${x.name}을(를) 삭제할까요? 담당 원생과 수업은 ‘미지정’으로 남습니다.`))return;
