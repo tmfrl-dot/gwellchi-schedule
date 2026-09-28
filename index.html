@@ -460,6 +460,14 @@ function renderPeople(){
     <button class="btn" data-act="add-stu">등록</button></div>${sRows}
     <p class="hint">목록은 이름 가나다순으로 정렬됩니다. 원생 색은 나이대나 반을 구분하는 용도로 직접 고르시면 됩니다. 하루 보기에서 ‘원생 색’을 누르면 이 색으로 보입니다. 담당 선생님을 바꾸면 이미 잡힌 수업까지 바꿀지 물어봅니다.</p>
     ${S.sample?`<p class="hint">지금 보이는 선생님·원생·수업은 샘플입니다. <button class="linkbtn" data-act="clear">샘플 지우고 시작하기</button></p>`:''}
+    <h3 class="sec">백업 · 복원</h3>
+    <div class="statusbar"><button class="btn" data-act="copy-backup">백업 복사하기</button>
+      <button class="btn ghost" data-act="paste-restore">붙여넣어 복원</button></div>
+    <p class="hint" style="margin-top:0">복사한 내용을 카카오톡 ‘나와의 채팅’이나 메모장에 붙여넣어 두시면 그게 백업입니다.</p>
+    <div class="statusbar"><button class="linkbtn" data-act="backup">파일로 내려받기</button>
+      <button class="linkbtn" data-act="restore">파일로 복원하기</button></div>
+    <input type="file" id="restoreFile" accept="application/json,.json" style="display:none">
+    <p class="hint">원생 ${S.students.length}명 · 수업 ${S.sessions.length}건이 저장되어 있습니다. 한 달에 한 번 정도 백업 파일을 받아 두시면 안전합니다.${cloud()?' 복원하면 시트 내용도 함께 바뀌어 다른 선생님 화면에도 반영됩니다.':''}</p>
     <h3 class="sec">구글 시트 연결</h3>${cloud()?`
       <p class="summary">${subText()}</p>
       <div class="statusbar"><button class="btn ghost" data-act="share-link">선생님용 링크 복사</button><button class="btn ghost" data-act="pull">지금 새로고침</button></div>
@@ -563,6 +571,41 @@ function applyPlanUI(){
   S.sample=false;Store.save();closeSheet();render();toast(`${month.getMonth()+1}월 스케줄을 적용했습니다`);
 }
 
+function backupText(){
+  return JSON.stringify({app:'원생 스케줄',version:1,exportedAt:new Date().toISOString(),teachers:S.teachers,students:S.students,sessions:S.sessions,plans:S.plans||{}});
+}
+function copyBackup(){
+  const txt=backupText();
+  const fallback=()=>showSheet(`<h4 id="sheetTitle">백업 내용 복사</h4>
+    <p class="note">아래 내용을 전체 선택해 복사한 뒤, 메모장이나 카카오톡 ‘나와의 채팅’에 붙여넣어 보관해 주세요.</p>
+    <textarea id="bkTxt" readonly style="min-height:160px">${esc(txt)}</textarea>
+    <div class="actions"><button class="btn ghost" data-act="close">닫기</button><button class="btn" data-act="select-backup">전체 선택</button></div>`);
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(txt).then(()=>toast(`백업을 복사했습니다 (원생 ${S.students.length}명 · 수업 ${S.sessions.length}건)`),fallback);
+  else fallback();
+}
+function openPaste(){
+  showSheet(`<h4 id="sheetTitle">붙여넣어 복원</h4>
+    <p class="note">보관해 둔 백업 내용을 아래 칸에 붙여넣고 복원을 누르세요. 지금 데이터는 모두 지워집니다.</p>
+    <textarea id="rsTxt" placeholder="여기에 길게 눌러 붙여넣기" style="min-height:140px"></textarea>
+    <div class="err" id="rsErr"></div>
+    <div class="actions"><button class="btn ghost" data-act="close">닫기</button><button class="btn" data-act="do-paste-restore">복원하기</button></div>`);
+}
+function backup(){
+  const data={app:'원생 스케줄',version:1,exportedAt:new Date().toISOString(),teachers:S.teachers,students:S.students,sessions:S.sessions,plans:S.plans||{}};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`원생스케줄_백업_${ymd(new Date())}.json`;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1000);toast('백업 파일을 저장했습니다');
+}
+function restoreFrom(text){
+  let d;try{d=JSON.parse(text)}catch(e){toast('백업 파일을 읽지 못했습니다');return}
+  if(!d||!Array.isArray(d.students)||!Array.isArray(d.sessions)){toast('이 앱의 백업 파일이 아닙니다');return}
+  const when=d.exportedAt?d.exportedAt.slice(0,10):'날짜 미상';
+  if(!confirm(`${when} 백업(원생 ${d.students.length}명 · 수업 ${d.sessions.length}건)으로 되돌립니다.\n지금 데이터는 모두 지워집니다. 진행할까요?`))return;
+  S={teachers:d.teachers||[],students:d.students,sessions:d.sessions,plans:d.plans||{},sample:false};
+  selStudent=S.students[0]?.id||null;tFilter=null;scopeTarget=null;
+  Store.save();render();toast('복원했습니다');
+}
 function localHas(){const d=ls.get(KEY,null);return !!(d&&!d.sample&&!d.uploaded&&((d.sessions||[]).length||(d.students||[]).length))}
 async function uploadLocal(ask){
   const L=migrate(ls.get(KEY,null));if(!L||L.sample){toast('올릴 데이터가 없습니다');return}
@@ -588,6 +631,7 @@ function render(){
 let scopeTarget=null;
 document.addEventListener('change',e=>{
   const el=e.target;
+  if(el.id==='restoreFile'){const f=el.files?.[0];if(f){const r=new FileReader();r.onload=()=>restoreFrom(String(r.result));r.readAsText(f)}el.value='';return}
   if(el.dataset.pi!==undefined){planRows[el.dataset.pi][el.dataset.pk]=el.dataset.pk==='tid'?(el.value||null):el.value;return}
   const id=el.dataset.stuteacher;if(!id)return;
   const st=student(id),newT=el.value||null;st.tid=newT;S.sample=false;Store.save();
@@ -639,6 +683,14 @@ document.addEventListener('click',e=>{
   if(a==='restore'&&editing){editing.status='normal';Store.save();closeSheet();render();toast('빠짐을 취소했습니다');return}
   if(a==='makeup'&&editing){openMakeup(editing);return}
   if(a==='goto-makeup'&&editing){const m=S.sessions.find(y=>y.id===editing.makeupId);if(m)openSheet({sess:m});return}
+  if(a==='copy-backup'){copyBackup();return}
+  if(a==='paste-restore'){openPaste();return}
+  if(a==='select-backup'){const t=$('#bkTxt');t.focus();t.select();t.setSelectionRange(0,t.value.length);toast('복사 버튼을 눌러 주세요');return}
+  if(a==='do-paste-restore'){const v=$('#rsTxt').value.trim();
+    if(!v){$('#rsErr').textContent='백업 내용을 붙여넣어 주세요.';return}
+    closeSheet();restoreFrom(v);return}
+  if(a==='backup'){backup();return}
+  if(a==='restore'){$('#restoreFile').click();return}
   if(a==='connect'){connect();return}
   if(a==='pull'){pull(true).then(()=>toast(sync==='ok'?'새로 불러왔습니다':'연결을 확인해 주세요'));return}
   if(a==='disconnect'){if(pending.length&&!confirm(`아직 저장되지 않은 ${pending.length}건이 있습니다. 그래도 해제할까요?`))return;
