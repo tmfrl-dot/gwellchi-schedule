@@ -339,7 +339,10 @@ let colorMode='teacher';
 const colorOf=x=>colorMode==='student'?stuColor(student(x.sid)):colorOfSess(x);
 const curYM=()=>`${month.getFullYear()}-${pad(month.getMonth()+1)}`;
 const sessionsOn=date=>S.sessions.filter(x=>x.date===date&&student(x.sid)).sort((a,b)=>toMin(a.start)-toMin(b.start));
-const tOptions=sel=>`<option value="">미지정</option>`+S.teachers.map(t=>`<option value="${t.id}" ${t.id===sel?'selected':''}>${esc(t.name)}</option>`).join('');
+const byName=(a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko');
+const sortedS=()=>[...S.students].sort(byName);
+const sortedT=()=>[...S.teachers].sort(byName);
+const tOptions=sel=>`<option value="">미지정</option>`+sortedT().map(t=>`<option value="${t.id}" ${t.id===sel?'selected':''}>${esc(t.name)}</option>`).join('');
 
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),1800)}
 
@@ -371,8 +374,8 @@ function renderDay(){
   const [y,m,d]=selDate.split('-').map(Number);
   const modeSeg=`<div class="seg" style="margin:0 0 10px"><button data-cmode="teacher" aria-pressed="${colorMode==='teacher'}">선생님 색</button><button data-cmode="student" aria-pressed="${colorMode==='student'}">원생 색</button></div>`;
   const legend=colorMode==='student'
-    ? (()=>{const ids=[...new Set(all.map(x=>x.sid))];return ids.length?`<div class="legend">${ids.map(id=>{const st=student(id);return `<span class="chip solid" style="--c:${stuColor(st)};background:var(--c)">${esc(st.name)}</span>`}).join('')}</div>`:''})()
-    : S.teachers.length?`<div class="legend"><button class="chip" data-tf="" aria-pressed="${!tFilter}" style="--c:var(--ink)">전체</button>${S.teachers.map(t=>`<button class="chip" data-tf="${t.id}" aria-pressed="${tFilter===t.id}" style="--c:${penVar(t.color)}"><span class="dot"></span>${esc(t.name)}</button>`).join('')}</div>`:'';
+    ? (()=>{const ids=[...new Set(all.map(x=>x.sid))].sort((a,b)=>byName(student(a)||{},student(b)||{}));return ids.length?`<div class="legend">${ids.map(id=>{const st=student(id);return `<span class="chip solid" style="--c:${stuColor(st)};background:var(--c)">${esc(st.name)}</span>`}).join('')}</div>`:''})()
+    : S.teachers.length?`<div class="legend"><button class="chip" data-tf="" aria-pressed="${!tFilter}" style="--c:var(--ink)">전체</button>${sortedT().map(t=>`<button class="chip" data-tf="${t.id}" aria-pressed="${tFilter===t.id}" style="--c:${penVar(t.color)}"><span class="dot"></span>${esc(t.name)}</button>`).join('')}</div>`:'';
   let body;
   const rowH=x=>{const st=student(x.sid),t=sessTeacher(x);return `<button class="row ${isAbs(x)?'abs':''}" data-sess="${x.id}" style="--c:${colorOf(x)}">
         <span class="dot"></span><span class="t">${x.start}–${x.end}</span><span class="n">${esc(st.name)}${x.makeupOf?'<span class="badge" style="color:var(--c)">보강</span>':''} ${t?`<span class="tag">${esc(t.name)}</span>`:''}</span>
@@ -403,7 +406,7 @@ function renderStudent(){
   if(!S.students.length)return `<div class="emptybox" style="margin-top:18px">먼저 ‘원생 관리’에서 원생을 등록해 주세요.</div>`;
   if(!student(selStudent))selStudent=S.students[0].id;
   const st=student(selStudent),t=teacher(st.tid);
-  const chips=`<div class="chips">${S.students.map(s=>`<button class="chip" data-stu="${s.id}" aria-pressed="${s.id===selStudent}" style="--c:${colorOfStu(s)}"><span class="dot"></span>${esc(s.name)}</button>`).join('')}</div>`;
+  const chips=`<div class="chips">${sortedS().map(s=>`<button class="chip" data-stu="${s.id}" aria-pressed="${s.id===selStudent}" style="--c:${colorOfStu(s)}"><span class="dot"></span>${esc(s.name)}</button>`).join('')}</div>`;
   const seg=`<div class="seg"><button data-stab="cal" aria-pressed="${stuTab==='cal'}">달력</button><button data-stab="log" aria-pressed="${stuTab==='log'}">수업일지</button></div>`;
   const monthList=S.sessions.filter(x=>x.sid===selStudent&&x.date.startsWith(curYM())).sort((a,b)=>a.date.localeCompare(b.date)||toMin(a.start)-toMin(b.start));
   return chips+seg+monthBar()+(stuTab==='cal'?stuCal(st,t,monthList):stuLog(st,monthList));
@@ -441,10 +444,10 @@ function stuLog(st,monthList){
 
 /* ===== 원생·선생님 관리 ===== */
 function renderPeople(){
-  const tRows=S.teachers.map(t=>`<div class="person t"><span class="dot" style="--c:${penVar(t.color)}"></span><span class="n">${esc(t.name)}</span>
+  const tRows=sortedT().map(t=>`<div class="person t"><span class="dot" style="--c:${penVar(t.color)}"></span><span class="n">${esc(t.name)}</span>
       <button class="linkbtn" data-trename="${t.id}">이름</button><button class="linkbtn" data-tdel="${t.id}">삭제</button>
       <div class="swatches">${PENS.map(p=>`<button class="sw" data-tcolor="${p}" data-for="${t.id}" aria-label="${PEN_KO[p]}" aria-pressed="${t.color===p}" style="--c:${penVar(p)}"></button>`).join('')}</div></div>`).join('')||'<div class="emptybox">등록된 선생님이 없습니다.</div>';
-  const sRows=S.students.map(s=>`<div class="person s"><span class="dot" style="--c:${stuColor(s)};box-shadow:inset 0 0 0 1px var(--line)"></span><span class="n">${esc(s.name)}</span>
+  const sRows=sortedS().map(s=>`<div class="person s"><span class="dot" style="--c:${stuColor(s)};box-shadow:inset 0 0 0 1px var(--line)"></span><span class="n">${esc(s.name)}</span>
       <select data-stuteacher="${s.id}" aria-label="${esc(s.name)} 담당 선생님">${tOptions(s.tid)}</select>
       <button class="linkbtn" data-rename="${s.id}">이름</button><button class="linkbtn" data-del-stu="${s.id}">삭제</button>
       <div class="swatches">${SPENS.map(c=>`<button class="sw" data-scolor="${c}" data-for="${s.id}" aria-label="${SPEN_KO[c]}" aria-pressed="${s.color===c}" style="--c:var(--s-${c})"></button>`).join('')}</div></div>`).join('')||'<div class="emptybox">등록된 원생이 없습니다.</div>';
@@ -455,7 +458,7 @@ function renderPeople(){
     <div class="addline"><input type="text" id="newName" placeholder="원생 이름" maxlength="20" aria-label="원생 이름">
     <select id="newStuT" aria-label="담당 선생님" style="width:auto">${tOptions(S.teachers[0]?.id)}</select>
     <button class="btn" data-act="add-stu">등록</button></div>${sRows}
-    <p class="hint">원생 색은 나이대나 반을 구분하는 용도로 직접 고르시면 됩니다. 하루 보기에서 ‘원생 색’을 누르면 이 색으로 보입니다. 담당 선생님을 바꾸면 이미 잡힌 수업까지 바꿀지 물어봅니다.</p>
+    <p class="hint">목록은 이름 가나다순으로 정렬됩니다. 원생 색은 나이대나 반을 구분하는 용도로 직접 고르시면 됩니다. 하루 보기에서 ‘원생 색’을 누르면 이 색으로 보입니다. 담당 선생님을 바꾸면 이미 잡힌 수업까지 바꿀지 물어봅니다.</p>
     ${S.sample?`<p class="hint">지금 보이는 선생님·원생·수업은 샘플입니다. <button class="linkbtn" data-act="clear">샘플 지우고 시작하기</button></p>`:''}
     <h3 class="sec">구글 시트 연결</h3>${cloud()?`
       <p class="summary">${subText()}</p>
@@ -495,7 +498,7 @@ function openSheet({sess=null,date=selDate,sid=null,preset=null}){
     <p class="note">수업 시간(${hrs(s)}시간)과 선생님 싸인은 일정에서 자동으로 채워집니다.</p></div>`:'';
   showSheet(`<h4 id="sheetTitle">${sess?(isAbs(s)?'빠진 수업':'수업 기록'):makeupFor?'보강 잡기':'수업 추가'}</h4>${statusBox}${logBox}
     ${sess?'<h5 class="schedh">일정</h5>':''}
-    <div class="two"><div class="field"><label for="fStu">원생</label><select id="fStu">${S.students.map(x=>`<option value="${x.id}" ${x.id===s.sid?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
+    <div class="two"><div class="field"><label for="fStu">원생</label><select id="fStu">${sortedS().map(x=>`<option value="${x.id}" ${x.id===s.sid?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
     <div class="field"><label for="fT">선생님</label><select id="fT">${tOptions(tid)}</select></div></div>
     <div class="field"><label for="fDate">날짜${sess?' (바꾸면 다른 날로 이동)':''}</label><input type="date" id="fDate" value="${s.date}"></div>
     <div class="two"><div class="field"><label for="fS">시작</label><input type="time" id="fS" step="300" value="${s.start}"></div>
