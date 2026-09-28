@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --paper:#F5F6F3;--surface:#FFFFFF;--ink:#1E2940;--muted:#6B7280;--line:#E2E5E9;
+  --paper:#FAFAF8;--surface:#FFFFFF;--ink:#1E2940;--muted:#6B7280;--line:#E2E5E9;
   --red:#C8333A;--gold:#C9A45C;--hl:#F4EA6A;--hl-ink:#1E2940;
   --s-yellow:#FFE27A;--s-lime:#CCF08C;--s-blue:#A9CBFF;--s-purple:#D6BAFF;--s-pink:#FFB9D8;--s-sky:#A9E7FF;--s-mint:#A6F0D6;--s-peach:#FFD3AC;--s-lavender:#C7C9FF;--s-coral:#FFB6B6;
   --p-pink:#FF3D8F;--p-yellow:#E3A400;--p-sky:#0EA5E9;--p-mint:#00B383;--p-purple:#9B4DFF;--p-orange:#FF7A00;--p-lime:#6FBF1E;--p-coral:#FF4D4D;--p-teal:#00B7CE;--p-blue:#3457FF;
@@ -19,13 +19,13 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --paper:#14171C;--surface:#1C2027;--ink:#E7E9EE;--muted:#9AA1AC;--line:#2C323B;
   --hl:#8C8431;--hl-ink:#FFFDE8;
-  --s-yellow:#7D6820;--s-lime:#5F7D33;--s-blue:#3E5A8C;--s-purple:#5D4A8F;--s-pink:#8B4E6D;--s-sky:#2F6478;--s-mint:#2C7361;--s-peach:#8A6142;--s-lavender:#555A96;--s-coral:#8D5050;
+  --s-yellow:#F2D06B;--s-lime:#C3E585;--s-blue:#9FC2F7;--s-purple:#CBADF8;--s-pink:#F7ABCE;--s-sky:#9EDDF7;--s-mint:#9FE8CE;--s-peach:#F7C99F;--s-lavender:#BEC1F7;--s-coral:#F7ABAB;
   --p-pink:#FF7FB8;--p-yellow:#FFD24D;--p-sky:#6FC9F5;--p-mint:#3FD9AC;--p-purple:#C398FF;--p-orange:#FFA857;--p-lime:#A5DD5C;--p-coral:#FF8A8A;--p-teal:#4DD8EA;--p-blue:#8199FF;
 }}
 :root[data-theme="dark"]{
   --paper:#14171C;--surface:#1C2027;--ink:#E7E9EE;--muted:#9AA1AC;--line:#2C323B;
   --hl:#8C8431;--hl-ink:#FFFDE8;
-  --s-yellow:#7D6820;--s-lime:#5F7D33;--s-blue:#3E5A8C;--s-purple:#5D4A8F;--s-pink:#8B4E6D;--s-sky:#2F6478;--s-mint:#2C7361;--s-peach:#8A6142;--s-lavender:#555A96;--s-coral:#8D5050;
+  --s-yellow:#F2D06B;--s-lime:#C3E585;--s-blue:#9FC2F7;--s-purple:#CBADF8;--s-pink:#F7ABCE;--s-sky:#9EDDF7;--s-mint:#9FE8CE;--s-peach:#F7C99F;--s-lavender:#BEC1F7;--s-coral:#F7ABAB;
   --p-pink:#FF7FB8;--p-yellow:#FFD24D;--p-sky:#6FC9F5;--p-mint:#3FD9AC;--p-purple:#C398FF;--p-orange:#FFA857;--p-lime:#A5DD5C;--p-coral:#FF8A8A;--p-teal:#4DD8EA;--p-blue:#8199FF;
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -87,7 +87,9 @@ nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)
 .bar{position:absolute;border:0;border-left:3px solid var(--c);background:color-mix(in srgb,var(--c) 20%,transparent);
   border-radius:0 6px 6px 0;padding:4px 5px;text-align:left;overflow:hidden;color:var(--ink)}
 .bar.stu{background:var(--c);border-left-color:color-mix(in srgb,var(--c) 70%,var(--ink))}
-.bar.stu .nm{color:var(--ink)}
+.bar.stu .nm{color:#1B1F27}
+.bar.stu .tm{color:#3C424E}
+.chip.solid{color:#1B1F27;border-color:transparent}
 .person.s{flex-wrap:wrap}
 .person.s .swatches{order:5;width:100%;flex-wrap:wrap;margin-top:4px}
 .bar .nm{display:block;font-weight:600;font-size:12.5px;color:var(--c);line-height:1.2;word-break:keep-all}
@@ -195,7 +197,8 @@ header .sub.bad{color:var(--red);font-weight:600}
 <div class="wrap">
   <header>
     <h1>원생 스케줄</h1>
-    <span class="sub" id="sub"></span>
+    <span style="display:flex;align-items:center;gap:8px"><span class="sub" id="sub"></span>
+    <button class="iconbtn" id="themeBtn" aria-label="밝게/어둡게 전환">☀️</button></span>
   </header>
   <nav class="tabs" role="tablist">
     <button role="tab" data-view="day">하루 보기</button>
@@ -368,7 +371,7 @@ function renderDay(){
   const [y,m,d]=selDate.split('-').map(Number);
   const modeSeg=`<div class="seg" style="margin:0 0 10px"><button data-cmode="teacher" aria-pressed="${colorMode==='teacher'}">선생님 색</button><button data-cmode="student" aria-pressed="${colorMode==='student'}">원생 색</button></div>`;
   const legend=colorMode==='student'
-    ? (()=>{const ids=[...new Set(all.map(x=>x.sid))];return ids.length?`<div class="legend">${ids.map(id=>{const st=student(id);return `<span class="chip" style="--c:${stuColor(st)};background:var(--c)">${esc(st.name)}</span>`}).join('')}</div>`:''})()
+    ? (()=>{const ids=[...new Set(all.map(x=>x.sid))];return ids.length?`<div class="legend">${ids.map(id=>{const st=student(id);return `<span class="chip solid" style="--c:${stuColor(st)};background:var(--c)">${esc(st.name)}</span>`}).join('')}</div>`:''})()
     : S.teachers.length?`<div class="legend"><button class="chip" data-tf="" aria-pressed="${!tFilter}" style="--c:var(--ink)">전체</button>${S.teachers.map(t=>`<button class="chip" data-tf="${t.id}" aria-pressed="${tFilter===t.id}" style="--c:${penVar(t.color)}"><span class="dot"></span>${esc(t.name)}</button>`).join('')}</div>`:'';
   let body;
   const rowH=x=>{const st=student(x.sid),t=sessTeacher(x);return `<button class="row ${isAbs(x)?'abs':''}" data-sess="${x.id}" style="--c:${colorOf(x)}">
@@ -672,6 +675,12 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.id==='newName')document.querySelector('[data-act="add-stu"]').click();
   if(e.key==='Enter'&&e.target.id==='newTeacher')document.querySelector('[data-act="add-teacher"]').click();
 });
+const THEME_KEY='academy-theme';
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);
+  const b=$('#themeBtn');if(b){b.textContent=t==='dark'?'🌙':'☀️';b.title=t==='dark'?'밝은 화면으로':'어두운 화면으로'}
+  try{localStorage.setItem(THEME_KEY,t)}catch(e){}}
+applyTheme((()=>{try{return localStorage.getItem(THEME_KEY)||'light'}catch(e){return 'light'}})());
+$('#themeBtn').addEventListener('click',()=>applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'));
 render();
 if(cloud()){pull(true);setInterval(()=>pull(),30000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pull()})}
 window.addEventListener('beforeunload',e=>{if(cloud()&&pending.length){e.preventDefault();e.returnValue=''}});
