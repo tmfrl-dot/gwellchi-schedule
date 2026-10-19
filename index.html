@@ -114,12 +114,16 @@ nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)
 .dlist{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
 .dlist h4{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;gap:6px;align-items:baseline}
 .dlist h4 em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:500}
-.drow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;padding:7px 4px;border-bottom:1px dashed var(--line)}
+.drow{display:flex;align-items:center;gap:7px;width:100%;padding:6px 4px;border-bottom:1px dashed var(--line)}
 .drow:last-child{border-bottom:0}
 .drow.on{background:color-mix(in srgb,var(--hl) 28%,transparent);border-radius:8px}
-.drow .dd{flex:none;font-size:12.5px;font-weight:700;width:42px;font-variant-numeric:tabular-nums}
-.drow .dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--c)}
-.drow .dt2{flex:1;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.djump{flex:none;border:0;border-radius:7px;background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--ink);
+  font-size:11.5px;font-weight:700;padding:3px 6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.djump.plain{background:none;color:var(--muted);font-weight:500;padding:3px 2px}
+.dtog{flex:1;min-width:0;display:flex;align-items:center;gap:7px;border:0;background:none;padding:0;text-align:left}
+.dtog .box{flex:none;width:17px;height:17px;border-radius:5px;border:1.5px solid var(--line);display:grid;place-items:center;font-size:10px;color:transparent}
+.drow.off .dtog .box{background:var(--c);border-color:transparent;color:#fff}
+.dt2{flex:1;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .drow .dsc{flex:none;font-size:11px;color:var(--muted)}
 .drow.off .dt2{color:var(--muted);text-decoration:line-through}
 .memoitem{display:flex;align-items:flex-start;gap:4px;padding:6px 0;border-bottom:1px dashed var(--line)}
@@ -427,19 +431,22 @@ const memosFor=(sc,date)=>(S.memos||[]).filter(m=>m.scope===sc&&(!m.date||m.date
   .sort((a,b)=>memoRank(a)-memoRank(b)||(a.done?(b.doneAt||0)-(a.doneAt||0):(a.ts||0)-(b.ts||0)));
 const memosOnDate=date=>(S.memos||[]).filter(m=>m.date===date);
 const memoColor=sc=>(MEMO_COLS.find(c=>c[0]===sc)||[])[2]||'var(--muted)';
-function datedList(){
-  const ym=curYM();
-  const items=(S.memos||[]).filter(m=>m.date&&m.date.startsWith(ym))
-    .sort((a,b)=>a.date.localeCompare(b.date)||(a.done?1:0)-(b.done?1:0)||(a.ts||0)-(b.ts||0));
-  if(!items.length)return `<div class="dlist"><h4>${month.getMonth()+1}월 날짜 메모</h4>
-    <p class="memoempty">달력에 넣은 메모가 없습니다.</p></div>`;
-  return `<div class="dlist"><h4>${month.getMonth()+1}월 날짜 메모 <em>${items.filter(m=>!m.done).length}건 남음</em></h4>
-    ${items.map(m=>`<button class="drow ${m.done?'off':''} ${m.date===selDate?'on':''}" data-date="${m.date}" style="--c:${memoColor(m.scope)}">
-      <span class="dd">${md(m.date)}</span><span class="dot"></span><span class="dt2">${esc(m.text)}</span>
-      <span class="dsc">${m.scope==='academy'?'학원':'개인'}</span></button>`).join('')}</div>`;
+function memoKey(m){return m.date||ymd(new Date(m.ts||Date.now()))}
+function monthList(){
+  const ym=curYM(),mNo=month.getMonth()+1;
+  const items=(S.memos||[]).filter(m=>memoKey(m).startsWith(ym))
+    .sort((a,b)=>memoKey(a).localeCompare(memoKey(b))||(a.ts||0)-(b.ts||0));
+  const left=items.filter(m=>!m.done).length;
+  return `<div class="dlist"><h4>${mNo}월 메모 <em>${items.length?`${left}건 남음`:'비어 있음'}</em></h4>
+    ${items.length?items.map(m=>`<div class="drow ${m.done?'off':''} ${m.date&&m.date===selDate?'on':''}" style="--c:${memoColor(m.scope)}">
+      ${m.date?`<button class="djump" data-date="${m.date}" aria-label="${md(m.date)}로 이동">📌 ${md(m.date)}</button>`
+        :`<span class="djump plain">${md(memoKey(m))}</span>`}
+      <button class="dtog" data-memo="${m.id}" aria-pressed="${!!m.done}"><span class="box">✓</span><span class="dt2">${esc(m.text)}</span></button>
+      <span class="dsc">${m.scope==='academy'?'학원':'개인'}</span></div>`).join('')
+      :'<p class="memoempty">이 달에 등록한 메모가 없습니다.</p>'}</div>`;
 }
 function memoBoard(){
-  return `<div class="memos">${MEMO_COLS.map(([sc,title])=>{
+  return monthList()+`<div class="memos">${MEMO_COLS.map(([sc,title])=>{
     const items=memosFor(sc,selDate),left=items.filter(m=>!m.done).length;
     return `<div class="memocol"><h4>${title}<em>${left?`남은 일 ${left}`:'비어 있음'}</em></h4>
       <input type="text" id="memoIn-${sc}" data-memoin="${sc}" maxlength="80" placeholder="메모 입력" aria-label="${title} 입력">
@@ -448,11 +455,10 @@ function memoBoard(){
       ${items.length?items.map(m=>`<div class="memoitem">
         <button class="memo ${m.done?'done':''} ${m.date?'pin':''}" data-memo="${m.id}" aria-pressed="${!!m.done}">
           <span class="box">✓</span><span class="mt">${esc(m.text)}
-            <span class="memodate">${m.date?`📌 ${md(m.date)} 달력`:`${md(ymd(new Date(m.ts||Date.now())))} 작성`}</span></span></button>
+            <span class="memodate">${m.date?`📌 ${md(m.date)} · ${md(ymd(new Date(m.ts||Date.now())))} 작성`:`${md(ymd(new Date(m.ts||Date.now())))} 작성`}</span></span></button>
         <button class="memox" data-memodel="${m.id}" aria-label="삭제">×</button></div>`).join('')
         :'<p class="memoempty">이 날짜에 보이는 메모가 없습니다.</p>'}</div>`}).join('')}</div>
-    ${datedList()}
-    <p class="hint">‘달력에 추가’로 넣은 메모는 그 날짜 칸에 제목이 뜨고, 달력에서 날짜를 누르면 위쪽 메모칸에 📌로 모여 보입니다. ‘메모에 추가’는 날짜와 상관없이 항상 보입니다.</p>`;
+    <p class="hint">‘달력에 추가’로 넣은 메모는 그 날짜 칸과 달력에 뜨고, 날짜를 누르면 아래 메모칸에 📌로 모여 보입니다. ‘메모에 추가’는 날짜와 상관없이 항상 보입니다.</p>`;
 }
 
 /* ===== 원생별 ===== */
