@@ -96,6 +96,22 @@ nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)
 .bar .tm{display:block;font-size:10.5px;color:var(--muted);line-height:1.3}
 .emptybox{padding:28px 16px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:12px}
 
+.memos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.memocol{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+.memocol h4{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:4px}
+.memocol h4 em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:500}
+.memoadd{display:flex;gap:5px;margin-bottom:8px}
+.memoadd input{flex:1;min-width:0;padding:8px 9px;font-size:13.5px}
+.memoadd button{flex:none;border:0;border-radius:10px;background:var(--ink);color:var(--paper);font-weight:700;padding:0 12px;font-size:16px}
+.memoitem{display:flex;align-items:flex-start;gap:4px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.memoitem:last-child{border-bottom:0}
+.memo{flex:1;min-width:0;display:flex;gap:7px;align-items:flex-start;background:none;border:0;padding:0;text-align:left}
+.memo .box{flex:none;width:18px;height:18px;margin-top:1px;border-radius:5px;border:1.5px solid var(--line);display:grid;place-items:center;font-size:11px;color:transparent}
+.memo.done .box{background:var(--p-mint);border-color:transparent;color:#fff}
+.memo .mt{font-size:13.5px;line-height:1.45;word-break:break-word;white-space:pre-wrap}
+.memo.done .mt{color:var(--muted);text-decoration:line-through}
+.memox{flex:none;border:0;background:none;color:var(--muted);font-size:15px;line-height:1;padding:2px}
+.memoempty{color:var(--muted);font-size:12.5px;padding:6px 2px}
 .list{margin-top:14px;display:flex;flex-direction:column;gap:6px}
 .row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:left;width:100%}
 .row .dot{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
@@ -242,7 +258,7 @@ function seed(){
   const pl=[[0,2,'19:00','21:00'],[1,1,'16:00','18:00'],[2,3,'17:00','19:00'],[3,2,'15:00','17:30'],[4,5,'18:00','20:00'],[1,4,'19:00','21:00']];
   const plans={};
   pl.forEach(([si,dow,start,end])=>{const s=students[si];(plans[s.id]??={})[ym]??=[];plans[s.id][ym].push({dow,start,end,tid:s.tid})});
-  const d={teachers,students,sessions:[],plans,sample:true};
+  const d={teachers,students,sessions:[],memos:[],plans,sample:true};
   students.forEach(s=>applyPlan(d,s.id,ym,1));
   const first=d.sessions.filter(x=>x.sid===students[0].id).sort((a,b)=>a.date.localeCompare(b.date))[0];
   if(first)first.log={content:'맛중 HSK 4급 듣기 ~p.35',homework:'p.46 문제 풀기',hanja:true};
@@ -252,7 +268,7 @@ function migrate(d){
   if(!d||!d.students||!d.sessions||(!d.teachers&&d.sample)||(d.sample&&!d.plans)||(d.sample&&!d.sessions.some(x=>x.fromPlan)))return seed();
   if(!d.teachers){const t={id:uid(),name:'원장님',color:'red'};d.teachers=[t];
     d.students.forEach(s=>{s.tid=t.id;delete s.color});d.sessions.forEach(x=>x.tid=t.id)}
-  d.plans??={};
+  d.plans??={};d.memos??=[];
   return d;
 }
 /* 월별 스케줄 → 그 달 수업 생성 (일지 쓴 수업은 보존) */
@@ -274,15 +290,17 @@ let CFG=ls.get(CFG_KEY,{});
 const cloud=()=>!!CFG.api;
 let snap=new Map(),pending=ls.get(PEND_KEY,[]),sync='idle',lastOk=0,flushing=null;
 function records(d){const r=[];
+  (d.memos||[]).forEach(x=>r.push(['memo',x.id,x]));
   d.teachers.forEach(x=>r.push(['teacher',x.id,x]));d.students.forEach(x=>r.push(['student',x.id,x]));
   d.sessions.forEach(x=>{const{_lane,...y}=x;r.push(['session',x.id,y])});
   Object.entries(d.plans||{}).forEach(([sid,p])=>Object.entries(p).forEach(([ym,rows])=>r.push(['plan',sid+'_'+ym,{sid,ym,rows}])));
   return r}
 const snapOf=d=>new Map(records(d).map(([t,id,x])=>[t+'|'+id,JSON.stringify(x)]));
-function fromRows(rows){const d={teachers:[],students:[],sessions:[],plans:{},sample:false};
+function fromRows(rows){const d={teachers:[],students:[],sessions:[],memos:[],plans:{},sample:false};
   rows.forEach(r=>{if(r.deleted||!r.data)return;
     if(r.type==='teacher')d.teachers.push(r.data);else if(r.type==='student')d.students.push(r.data);
-    else if(r.type==='session')d.sessions.push(r.data);else if(r.type==='plan')(d.plans[r.data.sid]??={})[r.data.ym]=r.data.rows});
+    else if(r.type==='session')d.sessions.push(r.data);else if(r.type==='memo')d.memos.push(r.data);
+    else if(r.type==='plan')(d.plans[r.data.sid]??={})[r.data.ym]=r.data.rows});
   return d}
 async function api(method,body){
   const url=CFG.api+(method==='GET'?`?code=${encodeURIComponent(CFG.code||'')}&t=${Date.now()}`:'');
@@ -310,7 +328,7 @@ async function pull(force){
   catch(e){setSync(e.message==='code'?'badcode':'error')}
 }
 const Store={
-  load(){if(cloud()){const c=ls.get(CACHE_KEY,null);const d=c?migrate(c):{teachers:[],students:[],sessions:[],plans:{},sample:false};d.sample=false;return d}
+  load(){if(cloud()){const c=ls.get(CACHE_KEY,null);const d=c?migrate(c):{teachers:[],students:[],sessions:[],memos:[],plans:{},sample:false};d.sample=false;d.memos??=[];return d}
     try{const r=localStorage.getItem(KEY);if(r)return migrate(JSON.parse(r))}catch(e){}return seed()},
   save(){
     if(cloud()){queueDiff();ls.set(CACHE_KEY,S);flush();return}
@@ -379,7 +397,7 @@ function renderDay(){
   let body;
   const rowH=x=>{const st=student(x.sid),t=sessTeacher(x);return `<button class="row ${isAbs(x)?'abs':''}" data-sess="${x.id}" style="--c:${colorOf(x)}">
         <span class="dot"></span><span class="t">${x.start}–${x.end}</span><span class="n">${esc(st.name)}${x.makeupOf?'<span class="badge" style="color:var(--c)">보강</span>':''} ${t?`<span class="tag">${esc(t.name)}</span>`:''}</span>
-        <span class="m">${isAbs(x)?(x.makeupId?'빠짐 · 보강 잡힘':'빠짐 · 보강 필요'):hasLog(x)?'일지 ✓':'일지 쓰기'}</span></button>`};
+        ${isAbs(x)?`<span class="m">${x.makeupId?'빠짐 · 보강 잡힘':'빠짐 · 보강 필요'}</span>`:x.memo?`<span class="m">${esc(x.memo)}</span>`:''}</button>`};
   if(!list.length){
     body=`<div class="emptybox">${tFilter?'이 선생님은 이날 수업이 없습니다.':'이날은 잡힌 수업이 없습니다.<br>원생별 달력에서 월 스케줄을 정하거나 ‘수업 추가’를 눌러 주세요.'}</div>`+(absL.length?`<div class="list">${absL.map(rowH).join('')}</div>`:'');
   }else{
@@ -398,7 +416,24 @@ function renderDay(){
       <div class="list">${[...list,...absL].map(rowH).join('')}</div>`;
   }
   return monthBar()+grid+`<div class="dayhead"><h3><span>${m}/${d}(${DOW[new Date(y,m-1,d).getDay()]})</span> ${list.length}명</h3>
-    <button class="btn" data-act="add-day">수업 추가</button></div>`+modeSeg+legend+body;
+    <button class="btn" data-act="add-day">수업 추가</button></div>`+modeSeg+legend+body+memoBoard();
+}
+
+/* ===== 메모판 ===== */
+const MEMO_COLS=[['academy','학원 메모'],['personal','개인 메모']];
+const memosOf=sc=>(S.memos||[]).filter(m=>m.scope===sc)
+  .sort((a,b)=>(a.done?1:0)-(b.done?1:0)||(a.done?(b.doneAt||0)-(a.doneAt||0):(a.ts||0)-(b.ts||0)));
+function memoBoard(){
+  return `<div class="memos">${MEMO_COLS.map(([sc,title])=>{
+    const items=memosOf(sc),left=items.filter(m=>!m.done).length;
+    return `<div class="memocol"><h4>${title}<em>${left?`남은 일 ${left}`:'비어 있음'}</em></h4>
+      <div class="memoadd"><input type="text" id="memoIn-${sc}" data-memoin="${sc}" maxlength="80" placeholder="메모 입력" aria-label="${title} 입력">
+        <button data-memoadd="${sc}" aria-label="${title} 추가">+</button></div>
+      ${items.length?items.map(m=>`<div class="memoitem">
+        <button class="memo ${m.done?'done':''}" data-memo="${m.id}" aria-pressed="${!!m.done}">
+          <span class="box">✓</span><span class="mt">${esc(m.text)}</span></button>
+        <button class="memox" data-memodel="${m.id}" aria-label="삭제">×</button></div>`).join('')
+        :'<p class="memoempty">아직 메모가 없습니다.</p>'}</div>`}).join('')}</div>`;
 }
 
 /* ===== 원생별 ===== */
@@ -572,7 +607,13 @@ function applyPlanUI(){
 }
 
 function backupText(){
-  return JSON.stringify({app:'원생 스케줄',version:1,exportedAt:new Date().toISOString(),teachers:S.teachers,students:S.students,sessions:S.sessions,plans:S.plans||{}});
+  return JSON.stringify({app:'원생 스케줄',version:1,exportedAt:new Date().toISOString(),teachers:S.teachers,students:S.students,sessions:S.sessions,memos:S.memos||[],plans:S.plans||{}});
+}
+function addMemo(sc){
+  const el=$(`#memoIn-${sc}`);if(!el)return;const text=el.value.trim();if(!text)return;
+  S.memos??=[];S.memos.push({id:uid(),scope:sc,text,done:false,ts:Date.now()});
+  S.sample=false;Store.save();render();
+  const next=$(`#memoIn-${sc}`);if(next)next.focus();
 }
 function copyBackup(){
   const txt=backupText();
@@ -591,7 +632,7 @@ function openPaste(){
     <div class="actions"><button class="btn ghost" data-act="close">닫기</button><button class="btn" data-act="do-paste-restore">복원하기</button></div>`);
 }
 function backup(){
-  const data={app:'원생 스케줄',version:1,exportedAt:new Date().toISOString(),teachers:S.teachers,students:S.students,sessions:S.sessions,plans:S.plans||{}};
+  const data={app:'원생 스케줄',version:1,exportedAt:new Date().toISOString(),teachers:S.teachers,students:S.students,sessions:S.sessions,memos:S.memos||[],plans:S.plans||{}};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=`원생스케줄_백업_${ymd(new Date())}.json`;document.body.appendChild(a);a.click();
@@ -602,7 +643,7 @@ function restoreFrom(text){
   if(!d||!Array.isArray(d.students)||!Array.isArray(d.sessions)){toast('이 앱의 백업 파일이 아닙니다');return}
   const when=d.exportedAt?d.exportedAt.slice(0,10):'날짜 미상';
   if(!confirm(`${when} 백업(원생 ${d.students.length}명 · 수업 ${d.sessions.length}건)으로 되돌립니다.\n지금 데이터는 모두 지워집니다. 진행할까요?`))return;
-  S={teachers:d.teachers||[],students:d.students,sessions:d.sessions,plans:d.plans||{},sample:false};
+  S={teachers:d.teachers||[],students:d.students,sessions:d.sessions,memos:d.memos||[],plans:d.plans||{},sample:false};
   selStudent=S.students[0]?.id||null;tFilter=null;scopeTarget=null;
   Store.save();render();toast('복원했습니다');
 }
@@ -683,6 +724,11 @@ document.addEventListener('click',e=>{
   if(a==='restore'&&editing){editing.status='normal';Store.save();closeSheet();render();toast('빠짐을 취소했습니다');return}
   if(a==='makeup'&&editing){openMakeup(editing);return}
   if(a==='goto-makeup'&&editing){const m=S.sessions.find(y=>y.id===editing.makeupId);if(m)openSheet({sess:m});return}
+  if(t.dataset.memoadd){addMemo(t.dataset.memoadd);return}
+  if(t.dataset.memo){const m=(S.memos||[]).find(x=>x.id===t.dataset.memo);
+    if(m){m.done=!m.done;m.doneAt=m.done?Date.now():0;S.sample=false;Store.save();render()}return}
+  if(t.dataset.memodel){const m=(S.memos||[]).find(x=>x.id===t.dataset.memodel);
+    if(m&&(m.done||confirm('이 메모를 지울까요?'))){S.memos=S.memos.filter(x=>x!==m);Store.save();render()}return}
   if(a==='copy-backup'){copyBackup();return}
   if(a==='paste-restore'){openPaste();return}
   if(a==='select-backup'){const t=$('#bkTxt');t.focus();t.select();t.setSelectionRange(0,t.value.length);toast('복사 버튼을 눌러 주세요');return}
@@ -722,11 +768,12 @@ document.addEventListener('click',e=>{
   if(t.dataset.rename){const s=student(t.dataset.rename);const n=prompt('새 이름',s.name);if(n&&n.trim()){s.name=n.trim();Store.save();render()}return}
   if(t.dataset.delStu){const s=student(t.dataset.delStu);if(!confirm(`${s.name} 원생과 모든 수업·일지를 삭제할까요?`))return;
     S.students=S.students.filter(x=>x!==s);S.sessions=S.sessions.filter(x=>x.sid!==s.id);delete S.plans[s.id];Store.save();render();return}
-  if(a==='clear'){if(!confirm('샘플 선생님·원생·수업을 모두 지울까요?'))return;S={teachers:[],students:[],sessions:[],plans:{},sample:false};selStudent=null;tFilter=null;Store.save();render();return}
+  if(a==='clear'){if(!confirm('샘플 선생님·원생·수업을 모두 지울까요?'))return;S={teachers:[],students:[],sessions:[],memos:[],plans:{},sample:false};selStudent=null;tFilter=null;Store.save();render();return}
 });
 $('#scrim').addEventListener('click',closeSheet);
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape')closeSheet();
+  if(e.key==='Enter'&&e.target.dataset?.memoin){addMemo(e.target.dataset.memoin);return}
   if(e.key==='Enter'&&e.target.id==='newName')document.querySelector('[data-act="add-stu"]').click();
   if(e.key==='Enter'&&e.target.id==='newTeacher')document.querySelector('[data-act="add-teacher"]').click();
 });
