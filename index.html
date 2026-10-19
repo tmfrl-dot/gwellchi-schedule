@@ -434,13 +434,15 @@ const memoColor=sc=>(MEMO_COLS.find(c=>c[0]===sc)||[])[2]||'var(--muted)';
 function memoKey(m){return m.date||ymd(new Date(m.ts||Date.now()))}
 function monthList(){
   const ym=curYM(),mNo=month.getMonth()+1;
-  const items=(S.memos||[]).filter(m=>memoKey(m).startsWith(ym))
-    .sort((a,b)=>memoKey(a).localeCompare(memoKey(b))||(a.ts||0)-(b.ts||0));
+  const all=S.memos||[];
+  const dated=all.filter(m=>m.date&&m.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date)||(a.ts||0)-(b.ts||0));
+  const plain=all.filter(m=>!m.date&&(memoKey(m).startsWith(ym)||(!m.done&&memoKey(m).slice(0,7)<ym))).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const items=[...dated,...plain];
   const left=items.filter(m=>!m.done).length;
   return `<div class="dlist"><h4>${mNo}월 메모 <em>${items.length?`${left}건 남음`:'비어 있음'}</em></h4>
     ${items.length?items.map(m=>`<div class="drow ${m.done?'off':''} ${m.date&&m.date===selDate?'on':''}" style="--c:${memoColor(m.scope)}">
       ${m.date?`<button class="djump" data-date="${m.date}" aria-label="${md(m.date)}로 이동">📌 ${md(m.date)}</button>`
-        :`<span class="djump plain">${md(memoKey(m))}</span>`}
+        :`<span class="djump plain">${md(memoKey(m))} 작성</span>`}
       <button class="dtog" data-memo="${m.id}" aria-pressed="${!!m.done}"><span class="box">✓</span><span class="dt2">${esc(m.text)}</span></button>
       <span class="dsc">${m.scope==='academy'?'학원':'개인'}</span></div>`).join('')
       :'<p class="memoempty">이 달에 등록한 메모가 없습니다.</p>'}</div>`;
@@ -455,7 +457,7 @@ function memoBoard(){
       ${items.length?items.map(m=>`<div class="memoitem">
         <button class="memo ${m.done?'done':''} ${m.date?'pin':''}" data-memo="${m.id}" aria-pressed="${!!m.done}">
           <span class="box">✓</span><span class="mt">${esc(m.text)}
-            <span class="memodate">${m.date?`📌 ${md(m.date)} · ${md(ymd(new Date(m.ts||Date.now())))} 작성`:`${md(ymd(new Date(m.ts||Date.now())))} 작성`}</span></span></button>
+            <span class="memodate">${m.date?`📌 ${md(m.date)} 일정 · ${md(ymd(new Date(m.ts||Date.now())))} 작성`:`${md(ymd(new Date(m.ts||Date.now())))} 작성`}</span></span></button>
         <button class="memox" data-memodel="${m.id}" aria-label="삭제">×</button></div>`).join('')
         :'<p class="memoempty">이 날짜에 보이는 메모가 없습니다.</p>'}</div>`}).join('')}</div>
     <p class="hint">‘달력에 추가’로 넣은 메모는 그 날짜 칸과 달력에 뜨고, 날짜를 누르면 아래 메모칸에 📌로 모여 보입니다. ‘메모에 추가’는 날짜와 상관없이 항상 보입니다.</p>`;
@@ -629,9 +631,11 @@ function saveMemoDate(){
   const date=$('#mDate')?.value;if(!date||!memoDraft)return;
   const sc=memoDraft.sc,text=memoDraft.text;memoDraft=null;
   S.memos??=[];S.memos.push({id:uid(),scope:sc,text,done:false,ts:Date.now(),date});
-  S.sample=false;Store.save();selDate=date;
-  if(date.slice(0,7)!==curYM())month=new Date(+date.slice(0,4),+date.slice(5,7)-1,1);
-  closeSheet();render();toast(`${md(date)} 달력에 넣었습니다`);
+  S.sample=false;Store.save();
+  const other=date.slice(0,7)!==curYM();
+  if(!other)selDate=date;
+  closeSheet();render();
+  toast(other?`${md(date)} 일정으로 넣었습니다 · ${+date.slice(5,7)}월 메모에서 확인`:`${md(date)} 일정으로 넣었습니다`);
 }
 function copyBackup(){
   const txt=backupText();
