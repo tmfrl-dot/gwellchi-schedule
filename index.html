@@ -100,9 +100,14 @@ nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)
 .memocol{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
 .memocol h4{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:4px}
 .memocol h4 em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:500}
-.memoadd{display:flex;gap:5px;margin-bottom:8px}
-.memoadd input{flex:1;min-width:0;padding:8px 9px;font-size:13.5px}
-.memoadd button{flex:none;border:0;border-radius:10px;background:var(--ink);color:var(--paper);font-weight:700;padding:0 12px;font-size:16px}
+.memocol input[type=text]{padding:8px 9px;font-size:13.5px}
+.memobtns{display:flex;gap:5px;margin:5px 0 8px}
+.memobtns button{flex:1;min-width:0;border:0;border-radius:9px;background:var(--ink);color:var(--paper);font-weight:600;padding:7px 2px;font-size:11.5px;white-space:nowrap}
+.memobtns button.cal{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.memodate{display:block;font-size:10.5px;color:var(--muted);margin-top:1px}
+.mdots{display:flex;gap:2px;margin-top:3px}
+.mdot{width:6px;height:6px;border-radius:2px;background:var(--c)}
+.mdot.off{opacity:.3}
 .memoitem{display:flex;align-items:flex-start;gap:4px;padding:6px 0;border-bottom:1px dashed var(--line)}
 .memoitem:last-child{border-bottom:0}
 .memo{flex:1;min-width:0;display:flex;gap:7px;align-items:flex-start;background:none;border:0;padding:0;text-align:left}
@@ -173,30 +178,13 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
 .seg button{flex:1;border:0;background:transparent;padding:7px;border-radius:8px;color:var(--muted);font-weight:500;font-size:14px}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper);font-weight:600}
 .planbtn{width:100%;margin-top:12px}
-.goal{margin:14px 0 8px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--hl);border-radius:8px;display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
-.goal p{margin:0;font-weight:600;white-space:pre-wrap}
-.goal p.none{color:var(--muted);font-weight:400}
-.logwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
-table.log{border-collapse:collapse;width:100%;min-width:640px;font-size:13px}
-table.log th{background:var(--paper);font-weight:600;text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
-table.log td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
-table.log tr{cursor:pointer}
-table.log tr:last-child td{border-bottom:0}
-table.log td.dt{white-space:nowrap;font-weight:600}
-table.log td.tm{white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
-table.log td.c{text-align:center}
-table.log .todo{color:var(--muted);font-style:normal;text-decoration:underline}
-.stamp{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--red);color:var(--red);font-size:12px;font-weight:700}
-.sign{color:var(--c);font-weight:600;white-space:nowrap}
-.check-ic{font-size:10px;margin-left:2px}
-.logbox{background:var(--paper);border-radius:12px;padding:12px;margin-bottom:14px}
-.logbox h5,.schedh{margin:0 0 10px;font-size:14px;font-weight:700}
 textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font:inherit;color:inherit;resize:vertical;min-height:60px}
 .planrow{display:grid;grid-template-columns:64px 1fr 1fr 32px;gap:6px;margin-bottom:6px;align-items:center}
 .planrow select,.planrow input{padding:8px 6px;font-size:14px}
 .planrow .tsel{grid-column:1 / 4}
 .planrow .x{border:0;background:none;color:var(--muted);font-size:18px;grid-row:1 / 3;grid-column:4}
 .planitem{border-bottom:1px dashed var(--line);padding-bottom:6px;margin-bottom:8px}
+.schedh{margin:0 0 10px;font-size:14px;font-weight:700}
 .note{font-size:12.5px;color:var(--muted);margin:6px 0 12px;line-height:1.5}
 .mark.abs{text-decoration:line-through;opacity:.5}
 .badge{display:inline-block;font-size:10px;line-height:1.3;border:1px solid currentColor;border-radius:4px;padding:0 3px;margin-left:3px;font-weight:600;vertical-align:1px}
@@ -244,9 +232,8 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 const toMin=t=>{const[h,m]=t.split(':').map(Number);return h*60+m};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const penVar=c=>{const k=PENS.includes(c)?c:OLD_PEN[c];return k?`var(--p-${k})`:'var(--muted)'};
-const hasLog=x=>!!(x.log&&(x.log.content||x.log.homework));
 const isAbs=x=>x.status==='absent';
-const keep=x=>hasLog(x)||isAbs(x)||!x.fromPlan;
+const keep=x=>isAbs(x)||!x.fromPlan||!!x.memo;
 const md=d=>{const[,m,dd]=d.split('-').map(Number);return `${m}/${dd}`};
 const hrs=x=>{const h=(toMin(x.end)-toMin(x.start))/60;return Number.isInteger(h)?h:h.toFixed(1)};
 
@@ -260,8 +247,6 @@ function seed(){
   pl.forEach(([si,dow,start,end])=>{const s=students[si];(plans[s.id]??={})[ym]??=[];plans[s.id][ym].push({dow,start,end,tid:s.tid})});
   const d={teachers,students,sessions:[],memos:[],plans,sample:true};
   students.forEach(s=>applyPlan(d,s.id,ym,1));
-  const first=d.sessions.filter(x=>x.sid===students[0].id).sort((a,b)=>a.date.localeCompare(b.date))[0];
-  if(first)first.log={content:'맛중 HSK 4급 듣기 ~p.35',homework:'p.46 문제 풀기',hanja:true};
   return d;
 }
 function migrate(d){
@@ -271,7 +256,7 @@ function migrate(d){
   d.plans??={};d.memos??=[];
   return d;
 }
-/* 월별 스케줄 → 그 달 수업 생성 (일지 쓴 수업은 보존) */
+/* 월별 스케줄 → 그 달 수업 생성 (빠짐·보강·메모 있는 수업은 보존) */
 function applyPlan(d,sid,ym,fromDay){
   const [y,m]=ym.split('-').map(Number),last=new Date(y,m,0).getDate();
   const from=`${ym}-${pad(fromDay)}`;
@@ -339,7 +324,7 @@ if(cloud()){snap=snapOf(S)}
 
 /* ===== 화면 상태 ===== */
 const today=new Date();
-let view='day',stuTab='cal';
+let view='day';
 let selDate=ymd(today);
 let month=new Date(today.getFullYear(),today.getMonth(),1);
 let selStudent=S.students[0]?.id||null;
@@ -386,8 +371,10 @@ function renderDay(){
   const byT=x=>!tFilter||sessTeacher(x)?.id===tFilter;
   const grid=monthGrid((date,d,dow)=>{
     const n=sessionsOn(date).filter(byT).filter(x=>!isAbs(x)).length;
-    return `<button class="cell ${cls(date,dow)} ${date===selDate?'sel':''}" data-date="${date}" aria-label="${d}일 수업 ${n}건">
-      <span class="d">${d}</span>${n?`<span class="cnt"><b>${n}</b>명</span>`:''}</button>`});
+    const mm=memosOnDate(date);
+    const dots=mm.length?`<span class="mdots">${MEMO_COLS.filter(([sc])=>mm.some(m=>m.scope===sc)).map(([sc,,c])=>`<span class="mdot ${mm.filter(m=>m.scope===sc).every(m=>m.done)?'off':''}" style="--c:${c}"></span>`).join('')}</span>`:'';
+    return `<button class="cell ${cls(date,dow)} ${date===selDate?'sel':''}" data-date="${date}" aria-label="${d}일 수업 ${n}건${mm.length?` 메모 ${mm.length}건`:''}">
+      <span class="d">${d}</span>${dots}${n?`<span class="cnt"><b>${n}</b>명</span>`:''}</button>`});
   const all=sessionsOn(selDate).filter(byT),list=all.filter(x=>!isAbs(x)),absL=all.filter(isAbs);
   const [y,m,d]=selDate.split('-').map(Number);
   const modeSeg=`<div class="seg" style="margin:0 0 10px"><button data-cmode="teacher" aria-pressed="${colorMode==='teacher'}">선생님 색</button><button data-cmode="student" aria-pressed="${colorMode==='student'}">원생 색</button></div>`;
@@ -395,11 +382,12 @@ function renderDay(){
     ? (()=>{const ids=[...new Set(all.map(x=>x.sid))].sort((a,b)=>byName(student(a)||{},student(b)||{}));return ids.length?`<div class="legend">${ids.map(id=>{const st=student(id);return `<span class="chip solid" style="--c:${stuColor(st)};background:var(--c)">${esc(st.name)}</span>`}).join('')}</div>`:''})()
     : S.teachers.length?`<div class="legend"><button class="chip" data-tf="" aria-pressed="${!tFilter}" style="--c:var(--ink)">전체</button>${sortedT().map(t=>`<button class="chip" data-tf="${t.id}" aria-pressed="${tFilter===t.id}" style="--c:${penVar(t.color)}"><span class="dot"></span>${esc(t.name)}</button>`).join('')}</div>`:'';
   let body;
-  const rowH=x=>{const st=student(x.sid),t=sessTeacher(x);return `<button class="row ${isAbs(x)?'abs':''}" data-sess="${x.id}" style="--c:${colorOf(x)}">
-        <span class="dot"></span><span class="t">${x.start}–${x.end}</span><span class="n">${esc(st.name)}${x.makeupOf?'<span class="badge" style="color:var(--c)">보강</span>':''} ${t?`<span class="tag">${esc(t.name)}</span>`:''}</span>
-        ${isAbs(x)?`<span class="m">${x.makeupId?'빠짐 · 보강 잡힘':'빠짐 · 보강 필요'}</span>`:x.memo?`<span class="m">${esc(x.memo)}</span>`:''}</button>`};
+  const rowH=x=>{const st=student(x.sid);return `<button class="row abs" data-sess="${x.id}" style="--c:${colorOf(x)}">
+        <span class="dot"></span><span class="t">${x.start}–${x.end}</span><span class="n">${esc(st.name)}</span>
+        <span class="m">${x.makeupId?'빠짐 · 보강 잡힘':'빠짐 · 보강 필요'}</span></button>`};
+  const absList=absL.length?`<div class="list">${absL.map(rowH).join('')}</div>`:'';
   if(!list.length){
-    body=`<div class="emptybox">${tFilter?'이 선생님은 이날 수업이 없습니다.':'이날은 잡힌 수업이 없습니다.<br>원생별 달력에서 월 스케줄을 정하거나 ‘수업 추가’를 눌러 주세요.'}</div>`+(absL.length?`<div class="list">${absL.map(rowH).join('')}</div>`:'');
+    body=`<div class="emptybox">${tFilter?'이 선생님은 이날 수업이 없습니다.':'이날은 잡힌 수업이 없습니다.<br>원생별 달력에서 월 스케줄을 정하거나 ‘수업 추가’를 눌러 주세요.'}</div>`+absList;
   }else{
     const lanes=[];list.forEach(x=>{let i=lanes.findIndex(end=>end<=toMin(x.start));if(i<0){i=lanes.length;lanes.push(0)}lanes[i]=toMin(x.end);x._lane=i});
     const sH=Math.min(14,Math.floor(Math.min(...list.map(x=>toMin(x.start)))/60));
@@ -409,31 +397,35 @@ function renderDay(){
     for(let h=sH;h<=eH;h++){const top=(h-sH)*H;axis+=`<div style="top:${top+8}px">${h}:00</div>`;hr+=`<div class="hr" style="top:${top+8}px"></div>`}
     const bars=list.map(x=>{const st=student(x.sid);const top=(toMin(x.start)-sH*60)/60*H+8,hh=Math.max(24,(toMin(x.end)-toMin(x.start))/60*H);
       return `<button class="bar ${colorMode==='student'?'stu':''}" data-sess="${x.id}" style="--c:${colorOf(x)};top:${top}px;height:${hh-2}px;left:${x._lane*LW+4}px;width:${LW-8}px">
-        <span class="nm">${esc(st.name)}${x.makeupOf?'<span class="badge">보</span>':''}${hasLog(x)?'<span class="check-ic">✓</span>':''}</span><span class="tm">${x.start}–${x.end}</span></button>`}).join('');
+        <span class="nm">${esc(st.name)}${x.makeupOf?'<span class="badge">보</span>':''}</span><span class="tm">${x.start}–${x.end}</span></button>`}).join('');
     const w=`max(100%, ${lanes.length*LW+8}px)`;
     body=`<div class="tl"><div class="axis" style="height:${total+16}px">${axis}</div>
-      <div class="lanes"><div class="lanes-in" style="height:${total+16}px;width:${w}">${hr}${bars}</div></div></div>
-      <div class="list">${[...list,...absL].map(rowH).join('')}</div>`;
+      <div class="lanes"><div class="lanes-in" style="height:${total+16}px;width:${w}">${hr}${bars}</div></div></div>`+absList;
   }
   return monthBar()+grid+`<div class="dayhead"><h3><span>${m}/${d}(${DOW[new Date(y,m-1,d).getDay()]})</span> ${list.length}명</h3>
     <button class="btn" data-act="add-day">수업 추가</button></div>`+modeSeg+legend+body+memoBoard();
 }
 
 /* ===== 메모판 ===== */
-const MEMO_COLS=[['academy','학원 메모'],['personal','개인 메모']];
-const memosOf=sc=>(S.memos||[]).filter(m=>m.scope===sc)
-  .sort((a,b)=>(a.done?1:0)-(b.done?1:0)||(a.done?(b.doneAt||0)-(a.doneAt||0):(a.ts||0)-(b.ts||0)));
+const MEMO_COLS=[['academy','학원 메모','var(--p-sky)'],['personal','개인 메모','var(--p-pink)']];
+const memoRank=m=>(m.done?2:0)+(m.date?0:1);
+const memosFor=(sc,date)=>(S.memos||[]).filter(m=>m.scope===sc&&(!m.date||m.date===date))
+  .sort((a,b)=>memoRank(a)-memoRank(b)||(a.done?(b.doneAt||0)-(a.doneAt||0):(a.ts||0)-(b.ts||0)));
+const memosOnDate=date=>(S.memos||[]).filter(m=>m.date===date);
 function memoBoard(){
   return `<div class="memos">${MEMO_COLS.map(([sc,title])=>{
-    const items=memosOf(sc),left=items.filter(m=>!m.done).length;
+    const items=memosFor(sc,selDate),left=items.filter(m=>!m.done).length;
     return `<div class="memocol"><h4>${title}<em>${left?`남은 일 ${left}`:'비어 있음'}</em></h4>
-      <div class="memoadd"><input type="text" id="memoIn-${sc}" data-memoin="${sc}" maxlength="80" placeholder="메모 입력" aria-label="${title} 입력">
-        <button data-memoadd="${sc}" aria-label="${title} 추가">+</button></div>
+      <input type="text" id="memoIn-${sc}" data-memoin="${sc}" maxlength="80" placeholder="메모 입력" aria-label="${title} 입력">
+      <div class="memobtns"><button data-memoadd="${sc}">메모에 추가</button>
+        <button class="cal" data-memocal="${sc}">${md(selDate)} 달력에</button></div>
       ${items.length?items.map(m=>`<div class="memoitem">
         <button class="memo ${m.done?'done':''}" data-memo="${m.id}" aria-pressed="${!!m.done}">
-          <span class="box">✓</span><span class="mt">${esc(m.text)}</span></button>
+          <span class="box">✓</span><span class="mt">${esc(m.text)}
+            <span class="memodate">${m.date?`📌 ${md(m.date)} 달력`:`${md(ymd(new Date(m.ts||Date.now())))} 작성`}</span></span></button>
         <button class="memox" data-memodel="${m.id}" aria-label="삭제">×</button></div>`).join('')
-        :'<p class="memoempty">아직 메모가 없습니다.</p>'}</div>`}).join('')}</div>`;
+        :'<p class="memoempty">이 날짜에 보이는 메모가 없습니다.</p>'}</div>`}).join('')}</div>
+    <p class="hint">‘달력에’로 넣은 메모는 그 날짜에만 보이고 달력에 점으로 표시됩니다. ‘메모에 추가’는 날짜와 상관없이 항상 보입니다.</p>`;
 }
 
 /* ===== 원생별 ===== */
@@ -442,15 +434,14 @@ function renderStudent(){
   if(!student(selStudent))selStudent=S.students[0].id;
   const st=student(selStudent),t=teacher(st.tid);
   const chips=`<div class="chips">${sortedS().map(s=>`<button class="chip" data-stu="${s.id}" aria-pressed="${s.id===selStudent}" style="--c:${colorOfStu(s)}"><span class="dot"></span>${esc(s.name)}</button>`).join('')}</div>`;
-  const seg=`<div class="seg"><button data-stab="cal" aria-pressed="${stuTab==='cal'}">달력</button><button data-stab="log" aria-pressed="${stuTab==='log'}">수업일지</button></div>`;
   const monthList=S.sessions.filter(x=>x.sid===selStudent&&x.date.startsWith(curYM())).sort((a,b)=>a.date.localeCompare(b.date)||toMin(a.start)-toMin(b.start));
-  return chips+seg+monthBar()+(stuTab==='cal'?stuCal(st,t,monthList):stuLog(st,monthList));
+  return chips+monthBar()+stuCal(st,t,monthList);
 }
 function stuCal(st,t,monthList){
   const order={};monthList.filter(x=>!isAbs(x)).forEach((x,i)=>order[x.id]=i);
   const grid=monthGrid((date,d,dow)=>{
     const ss=monthList.filter(x=>x.date===date);
-    const marks=ss.slice(0,2).map(x=>isAbs(x)?`<span class="mark abs" style="color:${colorOfSess(x)}">빠짐<br>${x.start}</span>`:`<span class="mark" style="color:${colorOfSess(x)}"><span class="n">${CIRC[order[x.id]]||order[x.id]+1}</span> ${x.start}${hasLog(x)?' ✓':''}${x.makeupOf?'<span class="badge">보</span>':''}<br>~${x.end}</span>`).join('');
+    const marks=ss.slice(0,2).map(x=>isAbs(x)?`<span class="mark abs" style="color:${colorOfSess(x)}">빠짐<br>${x.start}</span>`:`<span class="mark" style="color:${colorOfSess(x)}"><span class="n">${CIRC[order[x.id]]||order[x.id]+1}</span> ${x.start}${x.makeupOf?'<span class="badge">보</span>':''}<br>~${x.end}</span>`).join('');
     return `<button class="cell ${cls(date,dow)} ${ss.some(x=>!isAbs(x))?'has':''}" data-sdate="${date}" aria-label="${d}일${ss.length?' 수업 있음':''}">
       <span class="d">${d}</span>${marks}${ss.length>2?`<span class="more">+${ss.length-2}</span>`:''}</button>`});
   const plan=(S.plans[st.id]||{})[curYM()];
@@ -458,25 +449,8 @@ function stuCal(st,t,monthList){
   return grid+`<p class="summary"><b>${esc(st.name)}</b>${t?` · 담당 ${esc(t.name)}`:''} · 이번 달 수업 <b>${monthList.filter(x=>!isAbs(x)).length}</b>회${monthList.some(isAbs)?` · 빠짐 ${monthList.filter(isAbs).length}회`:''}${monthList.some(x=>x.makeupOf)?` · 보강 ${monthList.filter(x=>x.makeupOf).length}회`:''}</p>
     <p class="summary">${month.getMonth()+1}월 스케줄: ${planTxt}</p>
     <button class="btn planbtn" data-act="plan">${month.getMonth()+1}월 스케줄 정하기</button>
-    <p class="hint">수업 날짜를 누르면 빠짐 처리·보강 잡기·날짜 이동·수업일지 쓰기를 할 수 있습니다. 빈 날짜를 누르면 그날 한 번만 수업을 넣습니다.</p>`;
+    <p class="hint">수업 날짜를 누르면 빠짐 처리·보강 잡기·시간 변경·날짜 이동을 할 수 있습니다. 빈 날짜를 누르면 그날 한 번만 수업을 넣습니다.</p>`;
 }
-function stuLog(st,monthList){
-  const held=monthList.filter(x=>!isAbs(x));
-  const total=held.reduce((a,x)=>a+(toMin(x.end)-toMin(x.start))/60,0);
-  const done=held.filter(hasLog).length;
-  const goal=`<div class="goal"><p class="${st.goal?'':'none'}">${st.goal?esc(st.goal):'목표를 적어두면 일지 맨 위에 표시됩니다.'}</p><button class="linkbtn" data-act="goal">${st.goal?'수정':'목표 쓰기'}</button></div>`;
-  if(!monthList.length)return goal+`<div class="emptybox">이번 달 수업이 없습니다.</div>`;
-  const rows=monthList.map(x=>{const[,mm,dd]=x.date.split('-').map(Number),t=sessTeacher(x),L=x.log||{};
-    if(isAbs(x))return `<tr class="abs" data-sess="${x.id}"><td class="dt">${mm}/${dd}</td><td class="tm">${x.start}<br>~${x.end}</td><td colspan="4">빠짐${x.memo?` (${esc(x.memo)})`:''}${x.makeupId&&S.sessions.find(y=>y.id===x.makeupId)?` → ${md(S.sessions.find(y=>y.id===x.makeupId).date)} 보강`:' · 보강 필요'}</td><td></td></tr>`;
-    return `<tr data-sess="${x.id}"><td class="dt">${mm}/${dd}${x.makeupOf?'<span class="badge" style="color:var(--red)">보강</span>':''}</td><td class="tm">${x.start}<br>~${x.end}</td>
-      <td>${L.content?esc(L.content):'<span class="todo">일지 쓰기</span>'}</td><td class="c">${hrs(x)}</td>
-      <td class="c">${L.hanja?'<span class="stamp">中</span>':''}</td><td>${esc(L.homework||'')}</td>
-      <td><span class="sign" style="--c:${colorOfSess(x)}">${t?esc(t.name):''}</span></td></tr>`}).join('');
-  return goal+`<div class="logwrap"><table class="log"><thead><tr><th>날짜</th><th>수업시간</th><th>내용</th><th>시간</th><th>한자</th><th>숙제</th><th>선생님</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <p class="summary">이번 달 <b>${held.length}</b>회 · 총 <b>${Number.isInteger(total)?total:total.toFixed(1)}</b>시간 · 일지 작성 <b>${done}</b>/${held.length}</p>
-    <p class="hint">표를 옆으로 밀면 전체 칸이 보입니다. 줄을 누르면 일지를 쓰거나 고칠 수 있습니다.</p>`;
-}
-
 /* ===== 원생·선생님 관리 ===== */
 function renderPeople(){
   const tRows=sortedT().map(t=>`<div class="person t"><span class="dot" style="--c:${penVar(t.color)}"></span><span class="n">${esc(t.name)}</span>
@@ -520,27 +494,19 @@ function renderPeople(){
 function showSheet(html){$('#sheet').innerHTML=html;$('#sheet').classList.add('open');$('#scrim').classList.add('open');$('#sheet').scrollTop=0}
 function closeSheet(){$('#sheet').classList.remove('open');$('#scrim').classList.remove('open');editing=null}
 
-/* ===== 수업 추가·수정 + 수업일지 ===== */
+/* ===== 수업 추가·수정 ===== */
 let editing=null,makeupFor=null;
 function openSheet({sess=null,date=selDate,sid=null,preset=null}){
   if(!S.students.length){toast('먼저 원생을 등록해 주세요');view='people';render();return}
   editing=sess;if(!preset)makeupFor=null;
   const s=sess||{sid:sid||selStudent||S.students[0].id,date,start:'19:00',end:'21:00',memo:'',...(preset||{})};
   const tid=sess?(s.tid||student(s.sid)?.tid):(s.tid||student(s.sid)?.tid);
-  const L=s.log||{};
-  const [,mm,dd]=s.date.split('-').map(Number);
   const mk=sess&&S.sessions.find(y=>y.id===s.makeupId),orig=sess&&S.sessions.find(y=>y.id===s.makeupOf);
   const statusBox=!sess?(makeupFor?`<div class="absbox">${md(makeupFor.date)} 빠진 수업의 <b>보강</b>을 잡습니다. 날짜와 시간을 정해 주세요.</div>`:''):isAbs(s)
     ?`<div class="absbox"><b>빠짐</b> 처리된 수업입니다.${mk?` ${md(mk.date)} ${mk.start}에 보강이 잡혀 있습니다.`:' 아직 보강이 없습니다.'}</div>
       <div class="statusbar">${mk?'<button class="btn ghost" data-act="goto-makeup">보강 수업 보기</button>':'<button class="btn" data-act="makeup">보강 잡기</button>'}<button class="btn ghost" data-act="restore">빠짐 취소</button></div>`
     :`${orig?`<div class="absbox">${md(orig.date)} 빠진 수업의 보강입니다.</div>`:''}<div class="statusbar"><button class="btn ghost" data-act="absent">빠짐 처리</button></div>`;
-  const logBox=sess&&!isAbs(s)?`<div class="logbox"><h5>수업일지 · ${esc(student(s.sid)?.name)} ${mm}/${dd}</h5>
-    <div class="field"><label for="lC">내용</label><textarea id="lC" placeholder="예: 맛중 HSK 4급 듣기 ~p.45">${esc(L.content||'')}</textarea></div>
-    <div class="field"><label for="lH">숙제</label><textarea id="lH" placeholder="예: p.94~95 단어 외우기">${esc(L.homework||'')}</textarea></div>
-    <label class="check"><input type="checkbox" id="lJ" ${L.hanja?'checked':''}> 한자 확인</label>
-    <p class="note">수업 시간(${hrs(s)}시간)과 선생님 싸인은 일정에서 자동으로 채워집니다.</p></div>`:'';
-  showSheet(`<h4 id="sheetTitle">${sess?(isAbs(s)?'빠진 수업':'수업 기록'):makeupFor?'보강 잡기':'수업 추가'}</h4>${statusBox}${logBox}
-    ${sess?'<h5 class="schedh">일정</h5>':''}
+  showSheet(`<h4 id="sheetTitle">${sess?(isAbs(s)?'빠진 수업':'수업 기록'):makeupFor?'보강 잡기':'수업 추가'}</h4>${statusBox}
     <div class="two"><div class="field"><label for="fStu">원생</label><select id="fStu">${sortedS().map(x=>`<option value="${x.id}" ${x.id===s.sid?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
     <div class="field"><label for="fT">선생님</label><select id="fT">${tOptions(tid)}</select></div></div>
     <div class="field"><label for="fDate">날짜${sess?' (바꾸면 다른 날로 이동)':''}</label><input type="date" id="fDate" value="${s.date}"></div>
@@ -558,9 +524,8 @@ function saveSess(){
   if(toMin(end)<=toMin(start)){$('#fErr').textContent='끝 시간이 시작 시간보다 늦어야 합니다.';return}
   const st=student(sid);if(st&&!st.tid&&tid)st.tid=tid;
   if(editing){
-    const log=$('#lC')?{content:$('#lC').value.trim(),homework:$('#lH').value.trim(),hanja:$('#lJ').checked}:editing.log;
     if(editing.date!==date||editing.start!==start||editing.end!==end||editing.sid!==sid)editing.fromPlan=false;
-    Object.assign(editing,{sid,tid,date,start,end,memo,log});toast(hasLog(editing)?'일지를 저장했습니다':'저장했습니다');
+    Object.assign(editing,{sid,tid,date,start,end,memo});toast('저장했습니다');
   }else{const n={id:uid(),sid,tid,date,start,end,memo};
     if(makeupFor){n.makeupOf=makeupFor.id;makeupFor.makeupId=n.id;if(!memo)n.memo='보강'}
     S.sessions.push(n);toast(makeupFor?`${md(date)} 보강을 잡았습니다`:'저장했습니다');makeupFor=null}
@@ -593,7 +558,7 @@ function drawPlan(copied){
     ${rows||'<p class="note">요일을 추가해 주세요.</p>'}
     <button class="btn ghost" data-act="plan-add" style="width:100%;margin-bottom:12px">요일 추가</button>
     ${isCur?`<label class="check"><input type="checkbox" id="pFromToday" checked> 오늘부터 적용 (지난 날짜는 그대로 두기)</label>`:''}
-    <p class="note">적용하면 ${month.getMonth()+1}월 수업이 이 스케줄로 다시 채워집니다. 수업일지를 쓴 날, 빠짐 처리한 날, 따로 옮기거나 보강으로 넣은 수업은 그대로 남습니다.</p>
+    <p class="note">적용하면 ${month.getMonth()+1}월 수업이 이 스케줄로 다시 채워집니다. 빠짐 처리한 날, 메모를 적은 날, 따로 옮기거나 보강으로 넣은 수업은 그대로 남습니다.</p>
     <div class="err" id="pErr"></div>
     <div class="actions"><button class="btn ghost" data-act="close">닫기</button><button class="btn" data-act="plan-apply">${month.getMonth()+1}월에 적용</button></div>`);
 }
@@ -609,9 +574,9 @@ function applyPlanUI(){
 function backupText(){
   return JSON.stringify({app:'원생 스케줄',version:1,exportedAt:new Date().toISOString(),teachers:S.teachers,students:S.students,sessions:S.sessions,memos:S.memos||[],plans:S.plans||{}});
 }
-function addMemo(sc){
+function addMemo(sc,onCal){
   const el=$(`#memoIn-${sc}`);if(!el)return;const text=el.value.trim();if(!text)return;
-  S.memos??=[];S.memos.push({id:uid(),scope:sc,text,done:false,ts:Date.now()});
+  S.memos??=[];S.memos.push({id:uid(),scope:sc,text,done:false,ts:Date.now(),date:onCal?selDate:''});
   S.sample=false;Store.save();render();
   const next=$(`#memoIn-${sc}`);if(next)next.focus();
 }
@@ -686,7 +651,7 @@ function askTeacherScope(st,newT){
     <div class="field"><button class="btn ghost" data-tscope="future" style="width:100%">오늘 이후 수업 모두 바꾸기</button></div>
     <div class="field"><button class="btn ghost" data-tscope="all" style="width:100%">지난 수업까지 전부 바꾸기</button></div>
     <div class="field"><button class="btn" data-tscope="none" style="width:100%">앞으로 넣는 수업만 (지금 일정 그대로)</button></div>
-    <p class="note">‘지난 수업까지’를 고르면 이미 쓴 수업일지의 선생님 이름도 함께 바뀝니다.</p>`);
+    <p class="note">‘지난 수업까지’를 고르면 지난 기록의 선생님 이름도 함께 바뀝니다.</p>`);
 }
 function applyTeacherScope(kind){
   const t0=scopeTarget;if(!t0)return closeSheet();
@@ -704,7 +669,6 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
   const a=t.dataset.act;
   if(t.dataset.view){view=t.dataset.view;render();return}
-  if(t.dataset.stab){stuTab=t.dataset.stab;render();return}
   if(a==='prev'){month=new Date(month.getFullYear(),month.getMonth()-1,1);render();return}
   if(a==='next'){month=new Date(month.getFullYear(),month.getMonth()+1,1);render();return}
   if(a==='thismonth'){month=new Date(today.getFullYear(),today.getMonth(),1);selDate=ymd(today);render();return}
@@ -718,13 +682,14 @@ document.addEventListener('click',e=>{
   if(a==='add-day'){openSheet({date:selDate});return}
   if(a==='close'){closeSheet();return}
   if(a==='save-sess'){saveSess();return}
-  if(a==='del-sess'&&editing){if(!confirm(hasLog(editing)?'수업일지까지 함께 삭제됩니다. 삭제할까요?':'이 수업을 삭제할까요?'))return;const x=editing;S.sessions=S.sessions.filter(y=>y!==x);S.sessions.forEach(y=>{if(y.makeupId===x.id)delete y.makeupId;if(y.makeupOf===x.id)delete y.makeupOf});Store.save();closeSheet();toast('삭제했습니다');render();return}
+  if(a==='del-sess'&&editing){if(!confirm('이 수업을 삭제할까요?'))return;const x=editing;S.sessions=S.sessions.filter(y=>y!==x);S.sessions.forEach(y=>{if(y.makeupId===x.id)delete y.makeupId;if(y.makeupOf===x.id)delete y.makeupOf});Store.save();closeSheet();toast('삭제했습니다');render();return}
   if(a==='absent'&&editing){const x=editing;x.status='absent';S.sample=false;Store.save();render();
     if(confirm(`${md(x.date)} 수업을 빠짐 처리했습니다. 보강을 바로 잡을까요?`)){openMakeup(x)}else{closeSheet();toast('빠짐 처리했습니다')}return}
   if(a==='restore'&&editing){editing.status='normal';Store.save();closeSheet();render();toast('빠짐을 취소했습니다');return}
   if(a==='makeup'&&editing){openMakeup(editing);return}
   if(a==='goto-makeup'&&editing){const m=S.sessions.find(y=>y.id===editing.makeupId);if(m)openSheet({sess:m});return}
-  if(t.dataset.memoadd){addMemo(t.dataset.memoadd);return}
+  if(t.dataset.memoadd){addMemo(t.dataset.memoadd,false);return}
+  if(t.dataset.memocal){addMemo(t.dataset.memocal,true);return}
   if(t.dataset.memo){const m=(S.memos||[]).find(x=>x.id===t.dataset.memo);
     if(m){m.done=!m.done;m.doneAt=m.done?Date.now():0;S.sample=false;Store.save();render()}return}
   if(t.dataset.memodel){const m=(S.memos||[]).find(x=>x.id===t.dataset.memodel);
@@ -749,7 +714,6 @@ document.addEventListener('click',e=>{
   if(a==='plan-add'){const st=student(selStudent);planRows.push({dow:1,start:'19:00',end:'21:00',tid:st.tid});drawPlan(false);return}
   if(t.dataset.prm!==undefined){planRows.splice(Number(t.dataset.prm),1);drawPlan(false);return}
   if(a==='plan-apply'){applyPlanUI();return}
-  if(a==='goal'){const st=student(selStudent);const g=prompt('목표·메모 (예: 방학 중 HSK 4급 목표, 8/23 시험)',st.goal||'');if(g!==null){st.goal=g.trim();Store.save();render()}return}
   if(a==='add-teacher'){const n=$('#newTeacher').value.trim();if(!n)return;
     const used=S.teachers.map(x=>x.color);const color=PENS.find(p=>!used.includes(p))||PENS[S.teachers.length%PENS.length];
     S.teachers.push({id:uid(),name:n,color});S.sample=false;Store.save();render();toast(`${n} 등록했습니다`);return}
@@ -766,14 +730,14 @@ document.addEventListener('click',e=>{
     Object.values(S.plans).forEach(p=>Object.values(p).forEach(rs=>rs.forEach(r=>{if(r.tid===x.id)r.tid=null})));
     if(tFilter===x.id)tFilter=null;Store.save();render();return}
   if(t.dataset.rename){const s=student(t.dataset.rename);const n=prompt('새 이름',s.name);if(n&&n.trim()){s.name=n.trim();Store.save();render()}return}
-  if(t.dataset.delStu){const s=student(t.dataset.delStu);if(!confirm(`${s.name} 원생과 모든 수업·일지를 삭제할까요?`))return;
+  if(t.dataset.delStu){const s=student(t.dataset.delStu);if(!confirm(`${s.name} 원생과 모든 수업을 삭제할까요?`))return;
     S.students=S.students.filter(x=>x!==s);S.sessions=S.sessions.filter(x=>x.sid!==s.id);delete S.plans[s.id];Store.save();render();return}
   if(a==='clear'){if(!confirm('샘플 선생님·원생·수업을 모두 지울까요?'))return;S={teachers:[],students:[],sessions:[],memos:[],plans:{},sample:false};selStudent=null;tFilter=null;Store.save();render();return}
 });
 $('#scrim').addEventListener('click',closeSheet);
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape')closeSheet();
-  if(e.key==='Enter'&&e.target.dataset?.memoin){addMemo(e.target.dataset.memoin);return}
+  if(e.key==='Enter'&&e.target.dataset?.memoin){addMemo(e.target.dataset.memoin,false);return}
   if(e.key==='Enter'&&e.target.id==='newName')document.querySelector('[data-act="add-stu"]').click();
   if(e.key==='Enter'&&e.target.id==='newTeacher')document.querySelector('[data-act="add-teacher"]').click();
 });
