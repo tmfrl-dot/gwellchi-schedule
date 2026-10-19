@@ -103,7 +103,7 @@ nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)
 .memocol input[type=text]{padding:8px 9px;font-size:13.5px}
 .memobtns{display:flex;gap:5px;margin:5px 0 8px}
 .memobtns button{flex:1;min-width:0;border:0;border-radius:9px;background:var(--ink);color:var(--paper);font-weight:600;padding:7px 2px;font-size:11.5px;white-space:nowrap}
-.memobtns button.cal{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.memobtns button.cal{background:var(--hl);color:var(--hl-ink);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hl) 60%,var(--ink))}
 .memodate{display:block;font-size:10.5px;color:var(--muted);margin-top:1px}
 .cmemos{display:block;width:100%;margin-top:2px}
 .cmemo{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9.5px;line-height:1.35;
@@ -111,6 +111,19 @@ nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)
 .cmemo.off{opacity:.45;text-decoration:line-through}
 .cmore{display:block;font-size:9px;color:var(--muted);padding-left:4px}
 .memo.pin .mt{font-weight:600}
+.pop{position:relative;margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 10px 8px;
+  box-shadow:0 8px 20px rgba(20,25,35,.10)}
+.pop::before{content:"";position:absolute;top:-7px;left:24px;width:12px;height:12px;background:var(--surface);
+  border-left:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
+.pophead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.pophead strong{font-size:14px}
+.popcnt{flex:1;font-size:11.5px;color:var(--muted)}
+.popx{border:0;background:none;color:var(--muted);font-size:18px;line-height:1;padding:0 2px}
+.poplist{margin-bottom:6px}
+.popadd{display:flex;gap:5px}
+.popadd input{flex:1;min-width:0;padding:8px 9px;font-size:13.5px}
+.popadd button{flex:none;border:0;border-radius:9px;padding:0 10px;font-size:12px;font-weight:700;background:var(--p-sky);color:#fff}
+.popadd button[data-popadd="personal"]{background:var(--p-pink)}
 .dlist{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
 .dlist h4{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;gap:6px;align-items:baseline}
 .dlist h4 em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:500}
@@ -356,7 +369,7 @@ const colorOfSess=x=>penVar(sessTeacher(x)?.color);
 const sVar=c=>SPENS.includes(c)?`var(--s-${c})`:null;
 const stuColor=s=>{if(!s)return 'var(--muted)';const v=sVar(s.color);if(v)return v;const i=Math.max(0,S.students.findIndex(x=>x.id===s.id));return `var(--s-${SPENS[i%SPENS.length]})`};
 const colorOfStu=s=>stuColor(s);
-let colorMode='teacher';
+let colorMode='teacher',dayPop=true;
 const colorOf=x=>colorMode==='student'?stuColor(student(x.sid)):colorOfSess(x);
 const curYM=()=>`${month.getFullYear()}-${pad(month.getMonth()+1)}`;
 const sessionsOn=date=>S.sessions.filter(x=>x.date===date&&student(x.sid)).sort((a,b)=>toMin(a.start)-toMin(b.start));
@@ -420,7 +433,7 @@ function renderDay(){
     body=`<div class="tl"><div class="axis" style="height:${total+16}px">${axis}</div>
       <div class="lanes"><div class="lanes-in" style="height:${total+16}px;width:${w}">${hr}${bars}</div></div></div>`+absList;
   }
-  return monthBar()+grid+`<div class="dayhead"><h3><span>${m}/${d}(${DOW[new Date(y,m-1,d).getDay()]})</span> ${list.length}명</h3>
+  return monthBar()+grid+dayPopup()+`<div class="dayhead"><h3><span>${m}/${d}(${DOW[new Date(y,m-1,d).getDay()]})</span> ${list.length}명</h3>
     <button class="btn" data-act="add-day">수업 추가</button></div>`+modeSeg+legend+body+memoBoard();
 }
 
@@ -446,6 +459,22 @@ function monthList(){
       <button class="dtog" data-memo="${m.id}" aria-pressed="${!!m.done}"><span class="box">✓</span><span class="dt2">${esc(m.text)}</span></button>
       <span class="dsc">${m.scope==='academy'?'학원':'개인'}</span></div>`).join('')
       :'<p class="memoempty">이 달에 등록한 메모가 없습니다.</p>'}</div>`;
+}
+function dayPopup(){
+  if(!dayPop)return '';
+  const items=memosOnDate(selDate).sort((a,b)=>(a.done?1:0)-(b.done?1:0)||(a.ts||0)-(b.ts||0));
+  const left=items.filter(m=>!m.done).length;
+  return `<div class="pop"><div class="pophead"><strong>${md(selDate)} 메모</strong>
+      <span class="popcnt">${items.length?`${left}건 남음`:'없음'}</span>
+      <button class="popx" data-act="pop-close" aria-label="닫기">×</button></div>
+    ${items.length?`<div class="poplist">${items.map(m=>`<div class="memoitem">
+      <button class="memo ${m.done?'done':''}" data-memo="${m.id}" aria-pressed="${!!m.done}">
+        <span class="box">✓</span><span class="mt">${esc(m.text)}
+          <span class="memodate">${m.scope==='academy'?'학원':'개인'} · ${md(ymd(new Date(m.ts||Date.now())))} 작성</span></span></button>
+      <button class="memox" data-memodel="${m.id}" aria-label="삭제">×</button></div>`).join('')}</div>`
+      :'<p class="memoempty">이 날짜에 등록한 메모가 없습니다.</p>'}
+    <div class="popadd"><input type="text" id="popIn" maxlength="80" enterkeyhint="done" placeholder="${md(selDate)}에 메모 추가" aria-label="${md(selDate)} 메모 입력">
+      <button data-popadd="academy">학원</button><button data-popadd="personal">개인</button></div></div>`;
 }
 function memoBoard(){
   return monthList()+`<div class="memos">${MEMO_COLS.map(([sc,title])=>{
@@ -615,22 +644,32 @@ function addMemo(sc){
   S.sample=false;Store.save();render();
   const next=$(`#memoIn-${sc}`);if(next)next.focus();
 }
+function addDayMemo(sc){
+  const el=$('#popIn');if(!el)return;const text=el.value.trim();if(!text)return;
+  S.memos??=[];S.memos.push({id:uid(),scope:sc,text,done:false,ts:Date.now(),date:selDate});
+  S.sample=false;Store.save();render();
+  const next=$('#popIn');if(next)next.focus();
+  toast(`${md(selDate)} 일정으로 넣었습니다`);
+}
 let memoDraft=null;
 function openMemoDate(sc){
   const el=$(`#memoIn-${sc}`),text=el?el.value.trim():'';
-  if(!text){toast('메모를 먼저 입력해 주세요');el?.focus();return}
-  memoDraft={sc,text};
+  memoDraft={sc};
   const title=MEMO_COLS.find(c=>c[0]===sc)[1];
-  showSheet(`<h4 id="sheetTitle">달력에 넣을 날짜</h4>
-    <p class="note">${title} · ${esc(text)}</p>
-    <div class="field"><label for="mDate">날짜</label><input type="date" id="mDate" enterkeyhint="done" value="${selDate}"></div>
-    <p class="note">날짜를 고르고 엔터를 쳐도 등록됩니다.</p>
+  showSheet(`<h4 id="sheetTitle">${title} · 달력에 추가</h4>
+    <div class="field"><label for="mDate">날짜</label><input type="date" id="mDate" enterkeyhint="next" value="${selDate}"></div>
+    <div class="field"><label for="mText">메모</label><input type="text" id="mText" maxlength="80" enterkeyhint="done" placeholder="예: 원비 정산, 교재 입고" value="${esc(text)}"></div>
+    <div class="err" id="mErr"></div>
+    <p class="note">날짜를 고르고 메모를 쓴 뒤 엔터를 쳐도 등록됩니다.</p>
     <div class="actions"><button class="btn ghost" data-act="close">닫기</button><button class="btn" data-act="memo-date-ok">이 날짜에 넣기</button></div>`);
-  setTimeout(()=>{const i=$('#mDate');if(i){i.focus();try{i.showPicker&&i.showPicker()}catch(e){}}},80);
+  setTimeout(()=>{const i=$(text?'#mDate':'#mText');if(i)i.focus()},80);
 }
 function saveMemoDate(){
-  const date=$('#mDate')?.value;if(!date||!memoDraft)return;
-  const sc=memoDraft.sc,text=memoDraft.text;memoDraft=null;
+  const date=$('#mDate')?.value,text=($('#mText')?.value||'').trim();
+  if(!memoDraft)return;
+  if(!date){const e=$('#mErr');if(e)e.textContent='날짜를 골라 주세요.';return}
+  if(!text){const e=$('#mErr');if(e)e.textContent='메모 내용을 적어 주세요.';$('#mText')?.focus();return}
+  const sc=memoDraft.sc;memoDraft=null;
   S.memos??=[];S.memos.push({id:uid(),scope:sc,text,done:false,ts:Date.now(),date});
   S.sample=false;Store.save();
   const other=date.slice(0,7)!==curYM();
@@ -730,7 +769,7 @@ document.addEventListener('click',e=>{
   if(a==='prev'){month=new Date(month.getFullYear(),month.getMonth()-1,1);render();return}
   if(a==='next'){month=new Date(month.getFullYear(),month.getMonth()+1,1);render();return}
   if(a==='thismonth'){month=new Date(today.getFullYear(),today.getMonth(),1);selDate=ymd(today);render();return}
-  if(t.dataset.date){selDate=t.dataset.date;render();return}
+  if(t.dataset.date){selDate=t.dataset.date;dayPop=true;render();return}
   if(t.dataset.tf!==undefined){tFilter=t.dataset.tf||null;render();return}
   if(t.dataset.sdate){
     const ss=S.sessions.filter(x=>x.sid===selStudent&&x.date===t.dataset.sdate);
@@ -746,6 +785,8 @@ document.addEventListener('click',e=>{
   if(a==='restore'&&editing){editing.status='normal';Store.save();closeSheet();render();toast('빠짐을 취소했습니다');return}
   if(a==='makeup'&&editing){openMakeup(editing);return}
   if(a==='goto-makeup'&&editing){const m=S.sessions.find(y=>y.id===editing.makeupId);if(m)openSheet({sess:m});return}
+  if(a==='pop-close'){dayPop=false;render();return}
+  if(t.dataset.popadd){addDayMemo(t.dataset.popadd);return}
   if(t.dataset.memoadd){addMemo(t.dataset.memoadd);return}
   if(t.dataset.memocal){openMemoDate(t.dataset.memocal);return}
   if(a==='memo-date-ok'){saveMemoDate();return}
@@ -799,7 +840,9 @@ document.addEventListener('keydown',e=>{
   if(e.key!=='Enter'||e.isComposing||e.keyCode===229)return;
   const el=e.target;
   if(el.dataset?.memoin){e.preventDefault();addMemo(el.dataset.memoin);return}
-  if(el.id==='mDate'||(memoDraft&&$('#sheet')?.contains(el))){e.preventDefault();saveMemoDate();return}
+  if(el.id==='popIn'){e.preventDefault();addDayMemo('academy');return}
+  if(el.id==='mDate'){e.preventDefault();$('#mText')?.focus();return}
+  if(el.id==='mText'||(memoDraft&&$('#sheet')?.contains(el))){e.preventDefault();saveMemoDate();return}
   if(el.id==='newName'){e.preventDefault();document.querySelector('[data-act="add-stu"]').click();return}
   if(el.id==='newTeacher'){e.preventDefault();document.querySelector('[data-act="add-teacher"]').click();return}
 });
