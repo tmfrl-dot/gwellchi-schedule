@@ -233,7 +233,7 @@ const toMin=t=>{const[h,m]=t.split(':').map(Number);return h*60+m};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const penVar=c=>{const k=PENS.includes(c)?c:OLD_PEN[c];return k?`var(--p-${k})`:'var(--muted)'};
 const isAbs=x=>x.status==='absent';
-const keep=x=>isAbs(x)||!x.fromPlan||!!x.memo;
+const keep=x=>isAbs(x)||!x.fromPlan;
 const md=d=>{const[,m,dd]=d.split('-').map(Number);return `${m}/${dd}`};
 const hrs=x=>{const h=(toMin(x.end)-toMin(x.start))/60;return Number.isInteger(h)?h:h.toFixed(1)};
 
@@ -418,14 +418,14 @@ function memoBoard(){
     return `<div class="memocol"><h4>${title}<em>${left?`남은 일 ${left}`:'비어 있음'}</em></h4>
       <input type="text" id="memoIn-${sc}" data-memoin="${sc}" maxlength="80" placeholder="메모 입력" aria-label="${title} 입력">
       <div class="memobtns"><button data-memoadd="${sc}">메모에 추가</button>
-        <button class="cal" data-memocal="${sc}">${md(selDate)} 달력에</button></div>
+        <button class="cal" data-memocal="${sc}">달력에 추가</button></div>
       ${items.length?items.map(m=>`<div class="memoitem">
         <button class="memo ${m.done?'done':''}" data-memo="${m.id}" aria-pressed="${!!m.done}">
           <span class="box">✓</span><span class="mt">${esc(m.text)}
             <span class="memodate">${m.date?`📌 ${md(m.date)} 달력`:`${md(ymd(new Date(m.ts||Date.now())))} 작성`}</span></span></button>
         <button class="memox" data-memodel="${m.id}" aria-label="삭제">×</button></div>`).join('')
         :'<p class="memoempty">이 날짜에 보이는 메모가 없습니다.</p>'}</div>`}).join('')}</div>
-    <p class="hint">‘달력에’로 넣은 메모는 그 날짜에만 보이고 달력에 점으로 표시됩니다. ‘메모에 추가’는 날짜와 상관없이 항상 보입니다.</p>`;
+    <p class="hint">‘달력에 추가’를 누르면 날짜를 고를 수 있고, 그 메모는 고른 날짜에만 보이며 달력에 점으로 표시됩니다. ‘메모에 추가’는 날짜와 상관없이 항상 보입니다.</p>`;
 }
 
 /* ===== 원생별 ===== */
@@ -558,7 +558,7 @@ function drawPlan(copied){
     ${rows||'<p class="note">요일을 추가해 주세요.</p>'}
     <button class="btn ghost" data-act="plan-add" style="width:100%;margin-bottom:12px">요일 추가</button>
     ${isCur?`<label class="check"><input type="checkbox" id="pFromToday" checked> 오늘부터 적용 (지난 날짜는 그대로 두기)</label>`:''}
-    <p class="note">적용하면 ${month.getMonth()+1}월 수업이 이 스케줄로 다시 채워집니다. 빠짐 처리한 날, 메모를 적은 날, 따로 옮기거나 보강으로 넣은 수업은 그대로 남습니다.</p>
+    <p class="note">적용하면 ${month.getMonth()+1}월 수업이 이 스케줄로 다시 채워집니다. 빠짐 처리한 날, 따로 옮기거나 보강으로 넣은 수업은 그대로 남습니다.</p>
     <div class="err" id="pErr"></div>
     <div class="actions"><button class="btn ghost" data-act="close">닫기</button><button class="btn" data-act="plan-apply">${month.getMonth()+1}월에 적용</button></div>`);
 }
@@ -574,11 +574,31 @@ function applyPlanUI(){
 function backupText(){
   return JSON.stringify({app:'원생 스케줄',version:1,exportedAt:new Date().toISOString(),teachers:S.teachers,students:S.students,sessions:S.sessions,memos:S.memos||[],plans:S.plans||{}});
 }
-function addMemo(sc,onCal){
+function addMemo(sc){
   const el=$(`#memoIn-${sc}`);if(!el)return;const text=el.value.trim();if(!text)return;
-  S.memos??=[];S.memos.push({id:uid(),scope:sc,text,done:false,ts:Date.now(),date:onCal?selDate:''});
+  S.memos??=[];S.memos.push({id:uid(),scope:sc,text,done:false,ts:Date.now(),date:''});
   S.sample=false;Store.save();render();
   const next=$(`#memoIn-${sc}`);if(next)next.focus();
+}
+let memoDraft=null;
+function openMemoDate(sc){
+  const el=$(`#memoIn-${sc}`),text=el?el.value.trim():'';
+  if(!text){toast('메모를 먼저 입력해 주세요');el?.focus();return}
+  memoDraft={sc,text};
+  const title=MEMO_COLS.find(c=>c[0]===sc)[1];
+  showSheet(`<h4 id="sheetTitle">달력에 넣을 날짜</h4>
+    <p class="note">${title} · ${esc(text)}</p>
+    <div class="field"><label for="mDate">날짜</label><input type="date" id="mDate" value="${selDate}"></div>
+    <div class="actions"><button class="btn ghost" data-act="close">닫기</button><button class="btn" data-act="memo-date-ok">이 날짜에 넣기</button></div>`);
+  setTimeout(()=>{const i=$('#mDate');if(i){i.focus();try{i.showPicker&&i.showPicker()}catch(e){}}},80);
+}
+function saveMemoDate(){
+  const date=$('#mDate')?.value;if(!date||!memoDraft)return;
+  const sc=memoDraft.sc,text=memoDraft.text;memoDraft=null;
+  S.memos??=[];S.memos.push({id:uid(),scope:sc,text,done:false,ts:Date.now(),date});
+  S.sample=false;Store.save();selDate=date;
+  if(date.slice(0,7)!==curYM())month=new Date(+date.slice(0,4),+date.slice(5,7)-1,1);
+  closeSheet();render();toast(`${md(date)} 달력에 넣었습니다`);
 }
 function copyBackup(){
   const txt=backupText();
@@ -688,8 +708,9 @@ document.addEventListener('click',e=>{
   if(a==='restore'&&editing){editing.status='normal';Store.save();closeSheet();render();toast('빠짐을 취소했습니다');return}
   if(a==='makeup'&&editing){openMakeup(editing);return}
   if(a==='goto-makeup'&&editing){const m=S.sessions.find(y=>y.id===editing.makeupId);if(m)openSheet({sess:m});return}
-  if(t.dataset.memoadd){addMemo(t.dataset.memoadd,false);return}
-  if(t.dataset.memocal){addMemo(t.dataset.memocal,true);return}
+  if(t.dataset.memoadd){addMemo(t.dataset.memoadd);return}
+  if(t.dataset.memocal){openMemoDate(t.dataset.memocal);return}
+  if(a==='memo-date-ok'){saveMemoDate();return}
   if(t.dataset.memo){const m=(S.memos||[]).find(x=>x.id===t.dataset.memo);
     if(m){m.done=!m.done;m.doneAt=m.done?Date.now():0;S.sample=false;Store.save();render()}return}
   if(t.dataset.memodel){const m=(S.memos||[]).find(x=>x.id===t.dataset.memodel);
@@ -737,7 +758,7 @@ document.addEventListener('click',e=>{
 $('#scrim').addEventListener('click',closeSheet);
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape')closeSheet();
-  if(e.key==='Enter'&&e.target.dataset?.memoin){addMemo(e.target.dataset.memoin,false);return}
+  if(e.key==='Enter'&&e.target.dataset?.memoin){addMemo(e.target.dataset.memoin);return}
   if(e.key==='Enter'&&e.target.id==='newName')document.querySelector('[data-act="add-stu"]').click();
   if(e.key==='Enter'&&e.target.id==='newTeacher')document.querySelector('[data-act="add-teacher"]').click();
 });
