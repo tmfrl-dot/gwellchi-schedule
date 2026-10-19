@@ -111,15 +111,11 @@ nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)
 .cmemo.off{opacity:.45;text-decoration:line-through}
 .cmore{display:block;font-size:9px;color:var(--muted);padding-left:4px}
 .memo.pin .mt{font-weight:600}
-.pop{position:relative;margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 10px 8px;
-  box-shadow:0 8px 20px rgba(20,25,35,.10)}
-.pop::before{content:"";position:absolute;top:-7px;left:24px;width:12px;height:12px;background:var(--surface);
-  border-left:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
-.pophead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.pophead strong{font-size:14px}
-.popcnt{flex:1;font-size:11.5px;color:var(--muted)}
-.popx{border:0;background:none;color:var(--muted);font-size:18px;line-height:1;padding:0 2px}
-.poplist{margin-bottom:6px}
+.daylist{margin-bottom:10px}
+.daycard{display:flex;align-items:flex-start;gap:6px;border:1px solid var(--line);border-left:4px solid var(--c);
+  border-radius:10px;padding:10px 10px;margin-bottom:6px}
+.daycard.done{opacity:.6}
+.daycard .mt{font-size:14.5px;font-weight:600}
 .popadd{display:flex;gap:5px}
 .popadd input{flex:1;min-width:0;padding:8px 9px;font-size:13.5px}
 .popadd button{flex:none;border:0;border-radius:9px;padding:0 10px;font-size:12px;font-weight:700;background:var(--p-sky);color:#fff}
@@ -369,7 +365,7 @@ const colorOfSess=x=>penVar(sessTeacher(x)?.color);
 const sVar=c=>SPENS.includes(c)?`var(--s-${c})`:null;
 const stuColor=s=>{if(!s)return 'var(--muted)';const v=sVar(s.color);if(v)return v;const i=Math.max(0,S.students.findIndex(x=>x.id===s.id));return `var(--s-${SPENS[i%SPENS.length]})`};
 const colorOfStu=s=>stuColor(s);
-let colorMode='teacher',dayPop=true;
+let colorMode='teacher',daySheet=null;
 const colorOf=x=>colorMode==='student'?stuColor(student(x.sid)):colorOfSess(x);
 const curYM=()=>`${month.getFullYear()}-${pad(month.getMonth()+1)}`;
 const sessionsOn=date=>S.sessions.filter(x=>x.date===date&&student(x.sid)).sort((a,b)=>toMin(a.start)-toMin(b.start));
@@ -433,7 +429,7 @@ function renderDay(){
     body=`<div class="tl"><div class="axis" style="height:${total+16}px">${axis}</div>
       <div class="lanes"><div class="lanes-in" style="height:${total+16}px;width:${w}">${hr}${bars}</div></div></div>`+absList;
   }
-  return monthBar()+grid+dayPopup()+`<div class="dayhead"><h3><span>${m}/${d}(${DOW[new Date(y,m-1,d).getDay()]})</span> ${list.length}명</h3>
+  return monthBar()+grid+`<div class="dayhead"><h3><span>${m}/${d}(${DOW[new Date(y,m-1,d).getDay()]})</span> ${list.length}명</h3>
     <button class="btn" data-act="add-day">수업 추가</button></div>`+modeSeg+legend+body+memoBoard();
 }
 
@@ -460,22 +456,22 @@ function monthList(){
       <span class="dsc">${m.scope==='academy'?'학원':'개인'}</span></div>`).join('')
       :'<p class="memoempty">이 달에 등록한 메모가 없습니다.</p>'}</div>`;
 }
-function dayPopup(){
-  if(!dayPop)return '';
-  const items=memosOnDate(selDate).sort((a,b)=>(a.done?1:0)-(b.done?1:0)||(a.ts||0)-(b.ts||0));
-  const left=items.filter(m=>!m.done).length;
-  return `<div class="pop"><div class="pophead"><strong>${md(selDate)} 메모</strong>
-      <span class="popcnt">${items.length?`${left}건 남음`:'없음'}</span>
-      <button class="popx" data-act="pop-close" aria-label="닫기">×</button></div>
-    ${items.length?`<div class="poplist">${items.map(m=>`<div class="memoitem">
-      <button class="memo ${m.done?'done':''}" data-memo="${m.id}" aria-pressed="${!!m.done}">
-        <span class="box">✓</span><span class="mt">${esc(m.text)}
-          <span class="memodate">${m.scope==='academy'?'학원':'개인'} · ${md(ymd(new Date(m.ts||Date.now())))} 작성</span></span></button>
-      <button class="memox" data-memodel="${m.id}" aria-label="삭제">×</button></div>`).join('')}</div>`
-      :'<p class="memoempty">이 날짜에 등록한 메모가 없습니다.</p>'}
-    <div class="popadd"><input type="text" id="popIn" maxlength="80" enterkeyhint="done" placeholder="${md(selDate)}에 메모 추가" aria-label="${md(selDate)} 메모 입력">
-      <button data-popadd="academy">학원</button><button data-popadd="personal">개인</button></div></div>`;
+function daySheetHtml(date){
+  const [y,m,d]=date.split('-').map(Number);
+  const items=memosOnDate(date).sort((a,b)=>(a.done?1:0)-(b.done?1:0)||(a.ts||0)-(b.ts||0));
+  return `<h4 id="sheetTitle">${m}월 ${d}일(${DOW[new Date(y,m-1,d).getDay()]})</h4>
+    ${items.length?`<div class="daylist">${items.map(x=>`<div class="daycard ${x.done?'done':''}" style="--c:${memoColor(x.scope)}">
+      <button class="memo ${x.done?'done':''}" data-memo="${x.id}" aria-pressed="${!!x.done}">
+        <span class="box">✓</span><span class="mt">${esc(x.text)}
+          <span class="memodate">${x.scope==='academy'?'학원':'개인'} · ${md(ymd(new Date(x.ts||Date.now())))} 작성</span></span></button>
+      <button class="memox" data-memodel="${x.id}" aria-label="삭제">×</button></div>`).join('')}</div>`
+      :'<p class="memoempty" style="padding:14px 2px">이 날짜에 등록한 메모가 없습니다.</p>'}
+    <div class="popadd"><input type="text" id="popIn" maxlength="80" enterkeyhint="done" placeholder="이 날짜에 메모 추가" aria-label="메모 입력">
+      <button data-popadd="academy">학원</button><button data-popadd="personal">개인</button></div>
+    <div class="actions"><button class="btn ghost" data-act="close" style="width:100%">닫기</button></div>`;
 }
+function openDaySheet(date){daySheet=date;showSheet(daySheetHtml(date))}
+function refreshDaySheet(){if(daySheet)showSheet(daySheetHtml(daySheet))}
 function memoBoard(){
   return monthList()+`<div class="memos">${MEMO_COLS.map(([sc,title])=>{
     const items=memosFor(sc,selDate),left=items.filter(m=>!m.done).length;
@@ -556,7 +552,7 @@ function renderPeople(){
 
 /* ===== 시트 공통 ===== */
 function showSheet(html){$('#sheet').innerHTML=html;$('#sheet').classList.add('open');$('#scrim').classList.add('open');$('#sheet').scrollTop=0}
-function closeSheet(){$('#sheet').classList.remove('open');$('#scrim').classList.remove('open');editing=null}
+function closeSheet(){$('#sheet').classList.remove('open');$('#scrim').classList.remove('open');editing=null;daySheet=null}
 
 /* ===== 수업 추가·수정 ===== */
 let editing=null,makeupFor=null;
@@ -646,10 +642,11 @@ function addMemo(sc){
 }
 function addDayMemo(sc){
   const el=$('#popIn');if(!el)return;const text=el.value.trim();if(!text)return;
-  S.memos??=[];S.memos.push({id:uid(),scope:sc,text,done:false,ts:Date.now(),date:selDate});
-  S.sample=false;Store.save();render();
+  const date=daySheet||selDate;
+  S.memos??=[];S.memos.push({id:uid(),scope:sc,text,done:false,ts:Date.now(),date});
+  S.sample=false;Store.save();render();refreshDaySheet();
   const next=$('#popIn');if(next)next.focus();
-  toast(`${md(selDate)} 일정으로 넣었습니다`);
+  toast(`${md(date)} 일정으로 넣었습니다`);
 }
 let memoDraft=null;
 function openMemoDate(sc){
@@ -769,7 +766,7 @@ document.addEventListener('click',e=>{
   if(a==='prev'){month=new Date(month.getFullYear(),month.getMonth()-1,1);render();return}
   if(a==='next'){month=new Date(month.getFullYear(),month.getMonth()+1,1);render();return}
   if(a==='thismonth'){month=new Date(today.getFullYear(),today.getMonth(),1);selDate=ymd(today);render();return}
-  if(t.dataset.date){selDate=t.dataset.date;dayPop=true;render();return}
+  if(t.dataset.date){selDate=t.dataset.date;render();openDaySheet(selDate);return}
   if(t.dataset.tf!==undefined){tFilter=t.dataset.tf||null;render();return}
   if(t.dataset.sdate){
     const ss=S.sessions.filter(x=>x.sid===selStudent&&x.date===t.dataset.sdate);
@@ -785,15 +782,14 @@ document.addEventListener('click',e=>{
   if(a==='restore'&&editing){editing.status='normal';Store.save();closeSheet();render();toast('빠짐을 취소했습니다');return}
   if(a==='makeup'&&editing){openMakeup(editing);return}
   if(a==='goto-makeup'&&editing){const m=S.sessions.find(y=>y.id===editing.makeupId);if(m)openSheet({sess:m});return}
-  if(a==='pop-close'){dayPop=false;render();return}
   if(t.dataset.popadd){addDayMemo(t.dataset.popadd);return}
   if(t.dataset.memoadd){addMemo(t.dataset.memoadd);return}
   if(t.dataset.memocal){openMemoDate(t.dataset.memocal);return}
   if(a==='memo-date-ok'){saveMemoDate();return}
   if(t.dataset.memo){const m=(S.memos||[]).find(x=>x.id===t.dataset.memo);
-    if(m){m.done=!m.done;m.doneAt=m.done?Date.now():0;S.sample=false;Store.save();render()}return}
+    if(m){m.done=!m.done;m.doneAt=m.done?Date.now():0;S.sample=false;Store.save();render();refreshDaySheet()}return}
   if(t.dataset.memodel){const m=(S.memos||[]).find(x=>x.id===t.dataset.memodel);
-    if(m&&(m.done||confirm('이 메모를 지울까요?'))){S.memos=S.memos.filter(x=>x!==m);Store.save();render()}return}
+    if(m&&(m.done||confirm('이 메모를 지울까요?'))){S.memos=S.memos.filter(x=>x!==m);Store.save();render();refreshDaySheet()}return}
   if(a==='copy-backup'){copyBackup();return}
   if(a==='paste-restore'){openPaste();return}
   if(a==='select-backup'){const t=$('#bkTxt');t.focus();t.select();t.setSelectionRange(0,t.value.length);toast('복사 버튼을 눌러 주세요');return}
