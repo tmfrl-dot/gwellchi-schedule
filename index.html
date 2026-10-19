@@ -451,7 +451,7 @@ function memoBoard(){
   return monthList()+`<div class="memos">${MEMO_COLS.map(([sc,title])=>{
     const items=memosFor(sc,selDate),left=items.filter(m=>!m.done).length;
     return `<div class="memocol"><h4>${title}<em>${left?`남은 일 ${left}`:'비어 있음'}</em></h4>
-      <input type="text" id="memoIn-${sc}" data-memoin="${sc}" maxlength="80" placeholder="메모 입력" aria-label="${title} 입력">
+      <input type="text" id="memoIn-${sc}" data-memoin="${sc}" maxlength="80" enterkeyhint="done" placeholder="메모 입력 후 엔터" aria-label="${title} 입력">
       <div class="memobtns"><button data-memoadd="${sc}">메모에 추가</button>
         <button class="cal" data-memocal="${sc}">달력에 추가</button></div>
       ${items.length?items.map(m=>`<div class="memoitem">
@@ -623,7 +623,8 @@ function openMemoDate(sc){
   const title=MEMO_COLS.find(c=>c[0]===sc)[1];
   showSheet(`<h4 id="sheetTitle">달력에 넣을 날짜</h4>
     <p class="note">${title} · ${esc(text)}</p>
-    <div class="field"><label for="mDate">날짜</label><input type="date" id="mDate" value="${selDate}"></div>
+    <div class="field"><label for="mDate">날짜</label><input type="date" id="mDate" enterkeyhint="done" value="${selDate}"></div>
+    <p class="note">날짜를 고르고 엔터를 쳐도 등록됩니다.</p>
     <div class="actions"><button class="btn ghost" data-act="close">닫기</button><button class="btn" data-act="memo-date-ok">이 날짜에 넣기</button></div>`);
   setTimeout(()=>{const i=$('#mDate');if(i){i.focus();try{i.showPicker&&i.showPicker()}catch(e){}}},80);
 }
@@ -794,10 +795,13 @@ document.addEventListener('click',e=>{
 });
 $('#scrim').addEventListener('click',closeSheet);
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape')closeSheet();
-  if(e.key==='Enter'&&e.target.dataset?.memoin){addMemo(e.target.dataset.memoin);return}
-  if(e.key==='Enter'&&e.target.id==='newName')document.querySelector('[data-act="add-stu"]').click();
-  if(e.key==='Enter'&&e.target.id==='newTeacher')document.querySelector('[data-act="add-teacher"]').click();
+  if(e.key==='Escape'){closeSheet();return}
+  if(e.key!=='Enter'||e.isComposing||e.keyCode===229)return;
+  const el=e.target;
+  if(el.dataset?.memoin){e.preventDefault();addMemo(el.dataset.memoin);return}
+  if(el.id==='mDate'||(memoDraft&&$('#sheet')?.contains(el))){e.preventDefault();saveMemoDate();return}
+  if(el.id==='newName'){e.preventDefault();document.querySelector('[data-act="add-stu"]').click();return}
+  if(el.id==='newTeacher'){e.preventDefault();document.querySelector('[data-act="add-teacher"]').click();return}
 });
 const THEME_KEY='academy-theme';
 function applyTheme(t){document.documentElement.setAttribute('data-theme',t);
