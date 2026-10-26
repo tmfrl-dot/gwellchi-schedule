@@ -211,13 +211,13 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
 .seg{display:flex;gap:4px;margin:12px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px}
 .seg button{flex:1;border:0;background:transparent;padding:7px;border-radius:8px;color:var(--muted);font-weight:500;font-size:14px}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper);font-weight:600}
-.planbtn{width:100%;margin-top:12px}
+.snote{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+.snote h4{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:4px}
+.snote h4 em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:500}
+.snote .memoadd{display:flex;gap:5px;margin-bottom:8px}
+.snote .memoadd input{flex:1;min-width:0;padding:8px 9px;font-size:13.5px}
+.snote .memoadd button{flex:none;border:0;border-radius:9px;background:var(--ink);color:var(--paper);font-weight:600;padding:0 12px;font-size:12.5px;white-space:nowrap}
 textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font:inherit;color:inherit;resize:vertical;min-height:60px}
-.planrow{display:grid;grid-template-columns:64px 1fr 1fr 32px;gap:6px;margin-bottom:6px;align-items:center}
-.planrow select,.planrow input{padding:8px 6px;font-size:14px}
-.planrow .tsel{grid-column:1 / 4}
-.planrow .x{border:0;background:none;color:var(--muted);font-size:18px;grid-row:1 / 3;grid-column:4}
-.planitem{border-bottom:1px dashed var(--line);padding-bottom:6px;margin-bottom:8px}
 .schedh{margin:0 0 10px;font-size:14px;font-weight:700}
 .note{font-size:12.5px;color:var(--muted);margin:6px 0 12px;line-height:1.5}
 .mark.abs{text-decoration:line-through;opacity:.5}
@@ -421,7 +421,7 @@ function renderDay(){
         <span class="m">${x.makeupId?'빠짐 · 보강 잡힘':'빠짐 · 보강 필요'}</span></button>`};
   const absList=absL.length?`<div class="list">${absL.map(rowH).join('')}</div>`:'';
   if(!list.length){
-    body=`<div class="emptybox">${tFilter?'이 선생님은 이날 수업이 없습니다.':'이날은 잡힌 수업이 없습니다.<br>원생별 달력에서 월 스케줄을 정하거나 ‘수업 추가’를 눌러 주세요.'}</div>`+absList;
+    body=`<div class="emptybox">${tFilter?'이 선생님은 이날 수업이 없습니다.':'이날은 잡힌 수업이 없습니다.<br>‘수업 추가’를 누르거나 원생별 달력에서 날짜를 눌러 넣어 주세요.'}</div>`+absList;
   }else{
     const lanes=[];list.forEach(x=>{let i=lanes.findIndex(end=>end<=toMin(x.start));if(i<0){i=lanes.length;lanes.push(0)}lanes[i]=toMin(x.end);x._lane=i});
     const sH=Math.min(14,Math.floor(Math.min(...list.map(x=>toMin(x.start)))/60));
@@ -452,7 +452,7 @@ function monthList(){
   const ym=curYM(),mNo=month.getMonth()+1;
   const all=S.memos||[];
   const dated=all.filter(m=>m.date&&m.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date)||(a.ts||0)-(b.ts||0));
-  const plain=all.filter(m=>!m.date&&(memoKey(m).startsWith(ym)||(!m.done&&memoKey(m).slice(0,7)<ym))).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const plain=all.filter(m=>!m.date&&!m.sid&&(memoKey(m).startsWith(ym)||(!m.done&&memoKey(m).slice(0,7)<ym))).sort((a,b)=>(a.ts||0)-(b.ts||0));
   const items=[...dated,...plain];
   const left=items.filter(m=>!m.done).length;
   return `<div class="dlist"><h4>${mNo}월 메모 <em>${items.length?`${left}건 남음`:'비어 있음'}</em></h4>
@@ -504,6 +504,26 @@ function renderStudent(){
   const monthList=S.sessions.filter(x=>x.sid===selStudent&&x.date.startsWith(curYM())).sort((a,b)=>a.date.localeCompare(b.date)||toMin(a.start)-toMin(b.start));
   return chips+monthBar()+stuCal(st,t,monthList);
 }
+function notesOf(sid){return (S.memos||[]).filter(m=>m.sid===sid)
+  .sort((a,b)=>(a.done?1:0)-(b.done?1:0)||(a.done?(b.doneAt||0)-(a.doneAt||0):(a.ts||0)-(b.ts||0)))}
+function stuNotes(st){
+  const items=notesOf(st.id),left=items.filter(m=>!m.done).length;
+  return `<div class="snote"><h4>${esc(st.name)} 메모<em>${items.length?`남은 일 ${left}`:'비어 있음'}</em></h4>
+    <div class="memoadd"><input type="text" id="snoteIn" maxlength="120" enterkeyhint="done" placeholder="교재 진도, 학부모 요청 등" aria-label="${esc(st.name)} 메모 입력">
+      <button data-snoteadd="${st.id}">추가</button></div>
+    ${items.length?items.map(m=>`<div class="memoitem">
+      <button class="memo ${m.done?'done':''}" data-memo="${m.id}" aria-pressed="${!!m.done}">
+        <span class="box">✓</span><span class="mt">${esc(m.text)}
+          <span class="memodate">${md(ymd(new Date(m.ts||Date.now())))} 작성</span></span></button>
+      <button class="memox" data-memodel="${m.id}" aria-label="삭제">×</button></div>`).join('')
+      :'<p class="memoempty">아직 메모가 없습니다.</p>'}</div>`;
+}
+function addStuNote(sid){
+  const el=$('#snoteIn');if(!el)return;const text=el.value.trim();if(!text)return;
+  S.memos??=[];S.memos.push({id:uid(),scope:'student',sid,text,done:false,ts:Date.now(),date:''});
+  S.sample=false;Store.save();render();
+  const next=$('#snoteIn');if(next)next.focus();
+}
 function stuCal(st,t,monthList){
   const order={};monthList.filter(x=>!isAbs(x)).forEach((x,i)=>order[x.id]=i);
   const grid=monthGrid((date,d,dow)=>{
@@ -511,12 +531,9 @@ function stuCal(st,t,monthList){
     const marks=ss.slice(0,2).map(x=>isAbs(x)?`<span class="mark abs" style="color:${colorOfSess(x)}">빠짐<br>${x.start}</span>`:`<span class="mark" style="color:${colorOfSess(x)}"><span class="n">${CIRC[order[x.id]]||order[x.id]+1}</span> ${x.start}${x.makeupOf?'<span class="badge">보</span>':''}<br>~${x.end}</span>`).join('');
     return `<button class="cell ${cls(date,dow)} ${ss.some(x=>!isAbs(x))?'has':''}" data-sdate="${date}" aria-label="${d}일${ss.length?' 수업 있음':''}">
       <span class="d">${d}</span>${marks}${ss.length>2?`<span class="more">+${ss.length-2}</span>`:''}</button>`});
-  const plan=(S.plans[st.id]||{})[curYM()];
-  const planTxt=plan?.length?plan.map(r=>`${DOW[r.dow]} ${r.start}~${r.end}`).join(', '):'아직 정하지 않음';
   return grid+`<p class="summary"><b>${esc(st.name)}</b>${t?` · 담당 ${esc(t.name)}`:''} · 이번 달 수업 <b>${monthList.filter(x=>!isAbs(x)).length}</b>회${monthList.some(isAbs)?` · 빠짐 ${monthList.filter(isAbs).length}회`:''}${monthList.some(x=>x.makeupOf)?` · 보강 ${monthList.filter(x=>x.makeupOf).length}회`:''}</p>
-    <p class="summary">${month.getMonth()+1}월 스케줄: ${planTxt}</p>
-    <button class="btn planbtn" data-act="plan">${month.getMonth()+1}월 스케줄 정하기</button>
-    <p class="hint">수업 날짜를 누르면 빠짐 처리·보강 잡기·시간 변경·날짜 이동을 할 수 있습니다. 빈 날짜를 누르면 그날 한 번만 수업을 넣습니다.</p>`;
+    <p class="hint">수업 날짜를 누르면 빠짐 처리·보강 잡기·시간 변경·날짜 이동을 할 수 있습니다. 빈 날짜를 누르면 그날 한 번만 수업을 넣습니다.</p>`
+    +stuNotes(st);
 }
 /* ===== 원생·선생님 관리 ===== */
 function renderPeople(){
@@ -604,40 +621,6 @@ function openMakeup(orig){
   openSheet({date:'',sid:orig.sid,preset:{start:orig.start,end:orig.end,tid:orig.tid,memo:'보강'}});
   editing=null;
 }
-/* ===== 월 스케줄 정하기 ===== */
-let planRows=[];
-function openPlan(){
-  const st=student(selStudent),ym=curYM(),p=S.plans[st.id]||{};
-  const prev=new Date(month.getFullYear(),month.getMonth()-1,1),pym=`${prev.getFullYear()}-${pad(prev.getMonth()+1)}`;
-  planRows=JSON.parse(JSON.stringify(p[ym]||p[pym]||[{dow:2,start:'19:00',end:'21:00',tid:st.tid}]));
-  drawPlan(!p[ym]&&!!p[pym]);
-}
-function drawPlan(copied){
-  const st=student(selStudent),isCur=curYM()===ymd(today).slice(0,7);
-  const rows=planRows.map((r,i)=>`<div class="planitem"><div class="planrow">
-      <select data-pi="${i}" data-pk="dow" aria-label="요일">${[...DOW].map((d,k)=>`<option value="${k}" ${k==r.dow?'selected':''}>${d}</option>`).join('')}</select>
-      <input type="time" step="300" data-pi="${i}" data-pk="start" value="${r.start}" aria-label="시작">
-      <input type="time" step="300" data-pi="${i}" data-pk="end" value="${r.end}" aria-label="끝">
-      <button class="x" data-prm="${i}" aria-label="이 요일 빼기">×</button>
-      <select class="tsel" data-pi="${i}" data-pk="tid" aria-label="선생님">${tOptions(r.tid)}</select></div></div>`).join('');
-  showSheet(`<h4 id="sheetTitle">${esc(st.name)} · ${month.getMonth()+1}월 스케줄</h4>
-    ${copied?'<p class="note">지난달 스케줄을 불러왔습니다. 바뀐 부분만 고치면 됩니다.</p>':''}
-    ${rows||'<p class="note">요일을 추가해 주세요.</p>'}
-    <button class="btn ghost" data-act="plan-add" style="width:100%;margin-bottom:12px">요일 추가</button>
-    ${isCur?`<label class="check"><input type="checkbox" id="pFromToday" checked> 오늘부터 적용 (지난 날짜는 그대로 두기)</label>`:''}
-    <p class="note">적용하면 ${month.getMonth()+1}월 수업이 이 스케줄로 다시 채워집니다. 빠짐 처리한 날, 따로 옮기거나 보강으로 넣은 수업은 그대로 남습니다.</p>
-    <div class="err" id="pErr"></div>
-    <div class="actions"><button class="btn ghost" data-act="close">닫기</button><button class="btn" data-act="plan-apply">${month.getMonth()+1}월에 적용</button></div>`);
-}
-function applyPlanUI(){
-  for(const r of planRows)if(toMin(r.end)<=toMin(r.start)){$('#pErr').textContent='끝 시간이 시작 시간보다 늦어야 합니다.';return}
-  const ym=curYM(),st=student(selStudent);
-  (S.plans[st.id]??={})[ym]=planRows.map(r=>({...r,dow:Number(r.dow)}));
-  const from=$('#pFromToday')?.checked?today.getDate():1;
-  applyPlan(S,st.id,ym,from);
-  S.sample=false;Store.save();closeSheet();render();toast(`${month.getMonth()+1}월 스케줄을 적용했습니다`);
-}
-
 function backupText(){
   return JSON.stringify({app:'원생 스케줄',version:1,exportedAt:new Date().toISOString(),teachers:S.teachers,students:S.students,sessions:S.sessions,memos:S.memos||[],plans:S.plans||{}});
 }
@@ -739,7 +722,6 @@ let scopeTarget=null;
 document.addEventListener('change',e=>{
   const el=e.target;
   if(el.id==='restoreFile'){const f=el.files?.[0];if(f){const r=new FileReader();r.onload=()=>restoreFrom(String(r.result));r.readAsText(f)}el.value='';return}
-  if(el.dataset.pi!==undefined){planRows[el.dataset.pi][el.dataset.pk]=el.dataset.pk==='tid'?(el.value||null):el.value;return}
   const id=el.dataset.stuteacher;if(!id)return;
   const st=student(id),newT=el.value||null;st.tid=newT;S.sample=false;Store.save();
   if(S.sessions.some(x=>x.sid===id))askTeacherScope(st,newT);else{render();toast('담당 선생님을 바꿨습니다')}
@@ -790,6 +772,7 @@ document.addEventListener('click',e=>{
   if(a==='makeup'&&editing){openMakeup(editing);return}
   if(a==='goto-makeup'&&editing){const m=S.sessions.find(y=>y.id===editing.makeupId);if(m)openSheet({sess:m});return}
   if(t.dataset.popadd){addDayMemo(t.dataset.popadd);return}
+  if(t.dataset.snoteadd){addStuNote(t.dataset.snoteadd);return}
   if(t.dataset.memoadd){addMemo(t.dataset.memoadd);return}
   if(t.dataset.memocal){openMemoDate(t.dataset.memocal);return}
   if(a==='memo-date-ok'){saveMemoDate();return}
@@ -813,10 +796,6 @@ document.addEventListener('click',e=>{
   if(a==='share-link'){const link=`${location.origin}${location.pathname}?api=${encodeURIComponent(CFG.api)}&code=${encodeURIComponent(CFG.code||'')}`;
     (navigator.clipboard?.writeText(link)||Promise.reject()).then(()=>toast('링크를 복사했습니다'),()=>prompt('아래 링크를 복사해 주세요',link));return}
   if(a==='upload-local'){uploadLocal();return}
-  if(a==='plan'){openPlan();return}
-  if(a==='plan-add'){const st=student(selStudent);planRows.push({dow:1,start:'19:00',end:'21:00',tid:st.tid});drawPlan(false);return}
-  if(t.dataset.prm!==undefined){planRows.splice(Number(t.dataset.prm),1);drawPlan(false);return}
-  if(a==='plan-apply'){applyPlanUI();return}
   if(a==='add-teacher'){const n=$('#newTeacher').value.trim();if(!n)return;
     const used=S.teachers.map(x=>x.color);const color=PENS.find(p=>!used.includes(p))||PENS[S.teachers.length%PENS.length];
     S.teachers.push({id:uid(),name:n,color});S.sample=false;Store.save();render();toast(`${n} 등록했습니다`);return}
@@ -834,7 +813,8 @@ document.addEventListener('click',e=>{
     if(tFilter===x.id)tFilter=null;Store.save();render();return}
   if(t.dataset.rename){const s=student(t.dataset.rename);const n=prompt('새 이름',s.name);if(n&&n.trim()){s.name=n.trim();Store.save();render()}return}
   if(t.dataset.delStu){const s=student(t.dataset.delStu);if(!confirm(`${s.name} 원생과 모든 수업을 삭제할까요?`))return;
-    S.students=S.students.filter(x=>x!==s);S.sessions=S.sessions.filter(x=>x.sid!==s.id);delete S.plans[s.id];Store.save();render();return}
+    S.students=S.students.filter(x=>x!==s);S.sessions=S.sessions.filter(x=>x.sid!==s.id);
+    S.memos=(S.memos||[]).filter(x=>x.sid!==s.id);delete S.plans[s.id];Store.save();render();return}
   if(a==='clear'){if(!confirm('샘플 선생님·원생·수업을 모두 지울까요?'))return;S={teachers:[],students:[],sessions:[],memos:[],plans:{},sample:false};selStudent=null;tFilter=null;Store.save();render();return}
 });
 $('#scrim').addEventListener('click',closeSheet);
@@ -844,6 +824,7 @@ document.addEventListener('keydown',e=>{
   const el=e.target;
   if(el.dataset?.memoin){e.preventDefault();addMemo(el.dataset.memoin);return}
   if(el.id==='popIn'){e.preventDefault();addDayMemo('academy');return}
+  if(el.id==='snoteIn'){e.preventDefault();addStuNote(el.dataset.sid||$('[data-snoteadd]')?.dataset.snoteadd);return}
   if(el.id==='mDate'){e.preventDefault();$('#mText')?.focus();return}
   if(el.id==='mText'||(memoDraft&&$('#sheet')?.contains(el))){e.preventDefault();saveMemoDate();return}
   if(el.id==='newName'){e.preventDefault();document.querySelector('[data-act="add-stu"]').click();return}
