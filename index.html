@@ -51,7 +51,7 @@ header .sub{color:var(--muted);font-size:13px}
 
 nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);
   display:flex;gap:4px;padding:6px 0 10px;border-bottom:1px solid var(--line)}
-nav.tabs button{flex:1;border:0;background:transparent;padding:9px 4px;border-radius:10px;font-weight:500;color:var(--muted)}
+nav.tabs button{flex:1;border:0;background:transparent;padding:9px 2px;border-radius:10px;font-weight:500;font-size:13px;white-space:nowrap;color:var(--muted)}
 nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 0 0 1px var(--line)}
 
 .monthbar{display:flex;align-items:center;justify-content:space-between;margin:16px 0 8px}
@@ -211,6 +211,32 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
 .seg{display:flex;gap:4px;margin:12px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px}
 .seg button{flex:1;border:0;background:transparent;padding:7px;border-radius:8px;color:var(--muted);font-weight:500;font-size:14px}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper);font-weight:600}
+.pinhead{display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 2px}
+.pinhead h3{margin:0;font-size:17px;font-weight:700}
+.pinhead span{font-size:12.5px;color:var(--muted)}
+.pinboard{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:14px 12px;margin:14px 2px 24px}
+.pin{position:relative;background:var(--c);border-radius:2px 2px 3px 3px;min-height:118px;
+  box-shadow:2px 4px 10px rgba(20,25,35,.18);transform:rotate(var(--r,0deg));color:#1B1F27}
+.pin:nth-child(3n+1){--r:-1.4deg}.pin:nth-child(3n+2){--r:1deg}.pin:nth-child(3n){--r:-.5deg}
+.pin::before{content:"";position:absolute;top:-7px;left:50%;transform:translateX(-50%) rotate(-2deg);
+  width:46px;height:15px;background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.05)}
+.ptap{display:flex;flex-direction:column;width:100%;min-height:118px;border:0;background:none;
+  padding:20px 12px 12px;text-align:left;color:inherit}
+.pin .pt{flex:1;font-size:14.5px;font-weight:600;line-height:1.5;word-break:break-word;white-space:pre-wrap}
+.pin .pd{font-size:10.5px;color:rgba(27,31,39,.55);margin-top:10px}
+.pin.done{opacity:.6}
+.pin.done .pt{text-decoration:line-through}
+.px{position:absolute;top:2px;right:2px;border:0;background:none;color:rgba(27,31,39,.45);font-size:16px;line-height:1;padding:3px 5px}
+.pinbar{position:fixed;left:0;right:0;bottom:0;z-index:12;background:var(--paper);border-top:1px solid var(--line);
+  padding:8px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.pinbar-in{max-width:720px;margin:0 auto}
+.pincolors{display:flex;gap:6px;margin-bottom:6px}
+.pc{width:22px;height:22px;border-radius:4px;border:2px solid transparent;background:var(--c);padding:0;
+  box-shadow:1px 1px 3px rgba(20,25,35,.15)}
+.pc[aria-pressed="true"]{border-color:var(--ink)}
+.pinrow{display:flex;gap:6px}
+.pinrow input{flex:1;min-width:0;padding:10px 11px;font-size:14px}
+.pinrow button{flex:none;border:0;border-radius:10px;background:var(--ink);color:var(--paper);font-weight:700;padding:0 16px;font-size:13.5px}
 .snote{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
 .snote h4{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:4px}
 .snote h4 em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:500}
@@ -241,6 +267,7 @@ header .sub.bad{color:var(--red);font-weight:600}
   <nav class="tabs" role="tablist">
     <button role="tab" data-view="day">하루 보기</button>
     <button role="tab" data-view="student">원생별 달력</button>
+    <button role="tab" data-view="pin">주요 메모</button>
     <button role="tab" data-view="people">원생 관리</button>
   </nav>
   <main id="main"></main>
@@ -452,7 +479,7 @@ function monthList(){
   const ym=curYM(),mNo=month.getMonth()+1;
   const all=S.memos||[];
   const dated=all.filter(m=>m.date&&m.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date)||(a.ts||0)-(b.ts||0));
-  const plain=all.filter(m=>!m.date&&!m.sid&&(memoKey(m).startsWith(ym)||(!m.done&&memoKey(m).slice(0,7)<ym))).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const plain=all.filter(m=>!m.date&&!m.sid&&MEMO_COLS.some(c=>c[0]===m.scope)&&(memoKey(m).startsWith(ym)||(!m.done&&memoKey(m).slice(0,7)<ym))).sort((a,b)=>(a.ts||0)-(b.ts||0));
   const items=[...dated,...plain];
   const left=items.filter(m=>!m.done).length;
   return `<div class="dlist"><h4>${mNo}월 메모 <em>${items.length?`${left}건 남음`:'비어 있음'}</em></h4>
@@ -534,6 +561,32 @@ function stuCal(st,t,monthList){
   return grid+`<p class="summary"><b>${esc(st.name)}</b>${t?` · 담당 ${esc(t.name)}`:''} · 이번 달 수업 <b>${monthList.filter(x=>!isAbs(x)).length}</b>회${monthList.some(isAbs)?` · 빠짐 ${monthList.filter(isAbs).length}회`:''}${monthList.some(x=>x.makeupOf)?` · 보강 ${monthList.filter(x=>x.makeupOf).length}회`:''}</p>
     <p class="hint">수업 날짜를 누르면 빠짐 처리·보강 잡기·시간 변경·날짜 이동을 할 수 있습니다. 빈 날짜를 누르면 그날 한 번만 수업을 넣습니다.</p>`
     +stuNotes(st);
+}
+/* ===== 주요 메모 (포스트잇) ===== */
+const PIN_COLORS=['yellow','pink','mint','sky','lime','peach'];
+let pinColor=PIN_COLORS[0];
+const pinsOf=()=>(S.memos||[]).filter(m=>m.scope==='pin')
+  .sort((a,b)=>(a.done?1:0)-(b.done?1:0)||(b.ts||0)-(a.ts||0));
+function renderPin(){
+  const items=pinsOf(),left=items.filter(m=>!m.done).length;
+  const board=items.length
+    ? `<div class="pinboard">${items.map(m=>`<div class="pin ${m.done?'done':''}" style="--c:var(--s-${PIN_COLORS.includes(m.color)?m.color:'yellow'})">
+        <button class="ptap" data-memo="${m.id}" aria-pressed="${!!m.done}">
+          <span class="pt">${esc(m.text)}</span>
+          <span class="pd">${md(ymd(new Date(m.ts||Date.now())))}${m.done?' · 완료':''}</span></button>
+        <button class="px" data-memodel="${m.id}" aria-label="떼기">×</button></div>`).join('')}</div>`
+    : `<div class="emptybox" style="margin-top:18px">아래 칸에 적고 ‘붙이기’를 누르면 여기에 포스트잇으로 붙습니다.</div>`;
+  const bar = `<div class="pinbar"><div class="pinbar-in">
+      <div class="pincolors">${PIN_COLORS.map(c=>`<button class="pc" data-pincolor="${c}" aria-pressed="${pinColor===c}" aria-label="${c}" style="--c:var(--s-${c})"></button>`).join('')}</div>
+      <div class="pinrow"><input type="text" id="pinIn" maxlength="120" enterkeyhint="done" placeholder="꼭 기억할 내용" aria-label="주요 메모 입력">
+        <button data-act="pin-add">붙이기</button></div></div></div>`;
+  return `<div class="pinhead"><h3>주요 메모</h3><span>${items.length?`${left}건 남음`:'비어 있음'}</span></div>`+board+bar;
+}
+function addPin(){
+  const el=$('#pinIn');if(!el)return;const text=el.value.trim();if(!text)return;
+  S.memos??=[];S.memos.push({id:uid(),scope:'pin',color:pinColor,text,done:false,ts:Date.now(),date:''});
+  S.sample=false;Store.save();render();
+  const next=$('#pinIn');if(next)next.focus();
 }
 /* ===== 원생·선생님 관리 ===== */
 function renderPeople(){
@@ -715,7 +768,7 @@ async function connect(){
 /* ===== 렌더 & 이벤트 ===== */
 function render(){
   document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.view===view));
-  $('#main').innerHTML=view==='day'?renderDay():view==='student'?renderStudent():renderPeople();
+  $('#main').innerHTML=view==='day'?renderDay():view==='student'?renderStudent():view==='pin'?renderPin():renderPeople();
   setSync(sync);
 }
 let scopeTarget=null;
@@ -772,6 +825,8 @@ document.addEventListener('click',e=>{
   if(a==='makeup'&&editing){openMakeup(editing);return}
   if(a==='goto-makeup'&&editing){const m=S.sessions.find(y=>y.id===editing.makeupId);if(m)openSheet({sess:m});return}
   if(t.dataset.popadd){addDayMemo(t.dataset.popadd);return}
+  if(a==='pin-add'){addPin();return}
+  if(t.dataset.pincolor){pinColor=t.dataset.pincolor;render();$('#pinIn')?.focus();return}
   if(t.dataset.snoteadd){addStuNote(t.dataset.snoteadd);return}
   if(t.dataset.memoadd){addMemo(t.dataset.memoadd);return}
   if(t.dataset.memocal){openMemoDate(t.dataset.memocal);return}
@@ -825,6 +880,7 @@ document.addEventListener('keydown',e=>{
   if(el.dataset?.memoin){e.preventDefault();addMemo(el.dataset.memoin);return}
   if(el.id==='popIn'){e.preventDefault();addDayMemo('academy');return}
   if(el.id==='snoteIn'){e.preventDefault();addStuNote(el.dataset.sid||$('[data-snoteadd]')?.dataset.snoteadd);return}
+  if(el.id==='pinIn'){e.preventDefault();addPin();return}
   if(el.id==='mDate'){e.preventDefault();$('#mText')?.focus();return}
   if(el.id==='mText'||(memoDraft&&$('#sheet')?.contains(el))){e.preventDefault();saveMemoDate();return}
   if(el.id==='newName'){e.preventDefault();document.querySelector('[data-act="add-stu"]').click();return}
